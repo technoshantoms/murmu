@@ -1,0 +1,55 @@
+{
+  "version": "6",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1749096380960,
+      "tag": "0000_overconfident_lorna_dane",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1749147817924,
+      "tag": "0001_fixed_turbo",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1750265174753,
+      "tag": "0002_bitter_sprite",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1751086655644,
+      "tag": "0003_certain_orphan",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1751774124011,
+      "tag": "0004_brainy_firelord",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1752753759602,
+      "tag": "0005_polite_molecule_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1758600585830,
+      "tag": "0006_eager_gwen_stacy",
+      "breakpoints": true
+    }
+  ]
+}
