@@ -23,6 +23,7 @@ export const load: PageLoad = async ({ fetch, params, url }) => {
 		enumFilters,
 		fetch
 	);
+
 	const { data: enumsDropdown } = await getEnumsDropdown(clusterUuid, fetch);
 
 	return {

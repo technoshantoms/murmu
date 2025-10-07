@@ -15,11 +15,7 @@
 	}
 
 	function goBack() {
-		if (history.length > 2) {
-			history.go(-2);
-		} else {
-			goto('/');
-		}
+		history.back();
 	}
 </script>
 

@@ -11,15 +11,11 @@
 	import { AlertTriangle, ArrowLeft, Home } from '@lucide/svelte';
 
 	function goHome() {
-		goto('/');
+		goto('/admin');
 	}
 
 	function goBack() {
-		if (history.length > 2) {
-			history.go(-2);
-		} else {
-			goto('/');
-		}
+		history.back();
 	}
 </script>
 
