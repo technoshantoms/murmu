@@ -298,7 +298,7 @@
 	}
 </script>
 
-<div class="container mx-auto">
+<div class="container mx-auto py-4">
 	{#if typedPage?.state?.message}
 		<Alert
 			class="border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950 dark:text-green-200"

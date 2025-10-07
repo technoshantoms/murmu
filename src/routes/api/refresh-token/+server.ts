@@ -31,7 +31,10 @@ export const POST: RequestHandler = async ({
 		const { userId, xPublicKey, db } = authResult.data;
 
 		if (!userId) {
-			return json({ error: 'User not found', success: false }, { status: 404 });
+			return json(
+				{ error: 'No account associated with this key', success: false },
+				{ status: 200 }
+			);
 		}
 
 		const roleIds = await getRoleIdsByUserId(db, userId);

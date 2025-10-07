@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { deleteSourceIndex } from '$lib/api/source-indexes';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog/index.js';
-	import { Button } from '$lib/components/ui/button';
+	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import {
 		Table,
@@ -39,7 +39,7 @@
 	}
 </script>
 
-<div class="container mx-auto space-y-6">
+<div class="container mx-auto space-y-6 py-4">
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-3xl font-bold">Source Index Configuration</h1>
@@ -100,11 +100,11 @@
 										Edit
 									</Button>
 									<AlertDialog.Root>
-										<AlertDialog.Trigger>
-											<Button variant="destructive" size="sm" class="cursor-pointer">
-												<Trash2 class="size-4" />
-												Delete
-											</Button>
+										<AlertDialog.Trigger
+											class={buttonVariants({ variant: 'destructive', size: 'sm' })}
+										>
+											<Trash2 class="size-4" />
+											Delete
 										</AlertDialog.Trigger>
 										<AlertDialog.Content>
 											<AlertDialog.Header>

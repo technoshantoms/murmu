@@ -42,7 +42,7 @@
 	}
 </script>
 
-<div class="container mx-auto">
+<div class="container mx-auto py-4">
 	{#if typedPage?.state?.message}
 		<Alert class="mb-6">
 			<CircleAlert class="size-4" />

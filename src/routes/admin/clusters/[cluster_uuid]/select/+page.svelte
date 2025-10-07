@@ -103,7 +103,7 @@
 	});
 </script>
 
-<div class="container mx-auto">
+<div class="container mx-auto py-4">
 	{#if isSubmitting}
 		<div class="my-6">
 			<p class="mb-2 text-sm text-muted-foreground">
@@ -137,6 +137,7 @@
 						<Table.Head class="w-[40px]">ID</Table.Head>
 						<Table.Head class="w-[40px]">📍</Table.Head>
 						<Table.Head>Name / Title</Table.Head>
+						<Table.Head>Primary URL</Table.Head>
 						<Table.Head>Profile URL</Table.Head>
 						<Table.Head>Status</Table.Head>
 						<Table.Head>Availability</Table.Head>
@@ -159,6 +160,7 @@
 							<Table.Cell>{node.id}</Table.Cell>
 							<Table.Cell>{JSON.parse(node.data)?.geolocation ? '📍' : ''}</Table.Cell>
 							<Table.Cell>{JSON.parse(node.data)?.name || 'N/A'}</Table.Cell>
+							<Table.Cell>{JSON.parse(node.data)?.primary_url || 'N/A'}</Table.Cell>
 							<Table.Cell>
 								<a
 									href={node.profileUrl}

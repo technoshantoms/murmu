@@ -70,7 +70,7 @@
 	});
 </script>
 
-<div class="container mx-auto">
+<div class="container mx-auto py-4">
 	<Card>
 		<CardHeader>
 			<CardTitle>Edit Role Capabilities - Role ID: {data.roleId}</CardTitle>

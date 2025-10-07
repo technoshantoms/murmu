@@ -37,7 +37,7 @@
 					</Breadcrumb.Root>
 				</div>
 			</header>
-			<div class="flex flex-1 flex-col gap-4 p-4">
+			<div class="flex flex-1 flex-col gap-4">
 				{@render children()}
 			</div>
 		</Sidebar.Inset>

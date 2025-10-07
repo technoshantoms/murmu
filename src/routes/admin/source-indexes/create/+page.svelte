@@ -57,7 +57,7 @@
 	}
 </script>
 
-<div class="container mx-auto space-y-6">
+<div class="container mx-auto space-y-6 py-4">
 	<h1 class="text-3xl font-bold">Create Source Index</h1>
 	<p class="text-muted-foreground mt-2">
 		Add a new source index to discover nodes from the Murmurations network.

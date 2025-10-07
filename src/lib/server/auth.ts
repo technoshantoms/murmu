@@ -67,7 +67,7 @@ export async function authenticateRequest(
 		const userByPublicKey = await getUserIdByPublicKey(db, xPublicKey);
 
 		if (!userByPublicKey) {
-			return { success: false, error: 'User not found', status: 404 };
+			return { success: false, error: 'No account associated with this key', status: 200 };
 		}
 
 		userId = userByPublicKey.userId;

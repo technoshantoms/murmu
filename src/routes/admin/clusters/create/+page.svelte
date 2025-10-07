@@ -242,7 +242,7 @@
 	}
 </script>
 
-<div class="container mx-auto">
+<div class="container mx-auto py-4">
 	{#if loadingNodes}
 		<div class="my-6">
 			<p class="mb-2 text-sm text-muted-foreground">

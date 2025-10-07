@@ -203,7 +203,7 @@
 	}
 </script>
 
-<div class="container mx-auto space-y-6">
+<div class="container mx-auto space-y-6 py-4">
 	<div>
 		<h1 class="text-3xl font-bold text-slate-900 dark:text-slate-50">Generate Delegation</h1>
 		<p class="text-slate-600 dark:text-slate-400 mt-2">

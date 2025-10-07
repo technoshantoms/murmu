@@ -233,7 +233,7 @@
 	}
 </script>
 
-<div class="container mx-auto">
+<div class="container mx-auto py-4">
 	<div class="mb-4 sm:flex sm:items-center">
 		<div class="text-gray-900 sm:flex-auto dark:text-gray-50">
 			<p>

@@ -43,7 +43,7 @@
 	</Alert>
 {/if}
 
-<div class="container mx-auto">
+<div class="container mx-auto py-4">
 	<div class="mb-6">
 		{#if !currentToken}
 			<Alert

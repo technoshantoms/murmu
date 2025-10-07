@@ -102,7 +102,7 @@
 </script>
 
 <QueryClientProvider client={queryClient}>
-	<div class="container mx-auto">
+	<div class="container mx-auto py-4">
 		<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
 			<!-- BEGIN: List of user-generated profiles -->
 			<div class="md:col-span-1 space-y-4 overflow-auto">

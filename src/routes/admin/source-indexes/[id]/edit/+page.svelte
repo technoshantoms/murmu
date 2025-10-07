@@ -57,7 +57,7 @@
 </script>
 
 {#if data.error}
-	<div class="container mx-auto space-y-6">
+	<div class="container mx-auto space-y-6 py-4">
 		<h1 class="text-3xl font-bold">Edit Source Index</h1>
 		<Card>
 			<CardContent class="flex flex-col items-center justify-center py-12">
@@ -70,7 +70,7 @@
 		</Card>
 	</div>
 {:else if !data.sourceIndex}
-	<div class="container mx-auto space-y-6">
+	<div class="container mx-auto space-y-6 py-4">
 		<h1 class="text-3xl font-bold">Edit Source Index</h1>
 		<Card>
 			<CardContent class="flex flex-col items-center justify-center py-12">
@@ -85,7 +85,7 @@
 		</Card>
 	</div>
 {:else}
-	<div class="container mx-auto space-y-6">
+	<div class="container mx-auto space-y-6 py-4">
 		<h1 class="text-3xl font-bold">Edit Source Index</h1>
 		<p class="text-muted-foreground mt-2">Update the source index information below.</p>
 

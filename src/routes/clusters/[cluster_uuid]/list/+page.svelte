@@ -120,7 +120,7 @@
 	}
 </script>
 
-<div class="container mx-auto">
+<div class="container mx-auto py-4">
 	{#if !cluster}
 		<div class="flex h-32 items-center justify-center">
 			<div class="text-center space-y-2">

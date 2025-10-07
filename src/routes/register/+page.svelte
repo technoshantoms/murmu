@@ -9,7 +9,10 @@
 	import { Label } from '$lib/components/ui/label';
 	import { storeToken } from '$lib/core';
 	import { exportPublicKey, getOrCreateKeyPair, signRequest } from '$lib/crypto';
+	import { rootTokenStore } from '$lib/stores/token-store';
+	import { currentTokenStore } from '$lib/stores/token-store';
 	import type { CryptoKeyPair } from '$lib/types/crypto';
+	import { issueAccessUcan } from '$lib/utils/ucan-utils';
 	import { AlertCircle } from '@lucide/svelte';
 
 	import { onMount } from 'svelte';
@@ -53,7 +56,12 @@
 			}
 
 			await storeToken('rootToken', data.token);
-			await storeToken('currentToken', data.token);
+
+			const accessUcan = await issueAccessUcan(data.token, keypair, 60 * 60);
+			await storeToken('currentToken', accessUcan);
+
+			rootTokenStore.set(data.token);
+			currentTokenStore.set(accessUcan);
 
 			goto('/');
 		} catch (err) {
