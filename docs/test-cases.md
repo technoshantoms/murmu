@@ -4,7 +4,7 @@
 
 > Note: The term "cluster" comes from machine learning, where "graph clustering" is about partitioning nodes in a graph into cohesive groups (clusters) based on their common characteristics.
 
-Create a new cluster to get started from the Admin Dashboard by clicking **Create Cluster**. It takes time to build a cluster because once the list of nodes has been retrieved from a homepesa index, the aggregator app must fetch the profiles from every node in the list; this process can take some time if the list is long. Select two or more tags (e.g., "network" and "software") and check the **All Tags** checkbox to reduce the total size of the node list.
+Create a new cluster to get started from the Admin Dashboard by clicking **Create Cluster**. It takes time to build a cluster because once the list of nodes has been retrieved from a Murmurations index, the aggregator app must fetch the profiles from every node in the list; this process can take some time if the list is long. Select two or more tags (e.g., "network" and "software") and check the **All Tags** checkbox to reduce the total size of the node list.
 
 ## 1. Basic Tests
 
@@ -37,9 +37,9 @@ Create a new cluster to get started from the Admin Dashboard by clicking **Creat
 
 ## 2. Authority Transitions
 
-A profile has "authority" if it is hosted at the website it is claiming to be about. For example, if a profile is claiming to be about -- by setting its primary URL to -- <https://homepesasacco.com>, this obviously has more meaning if the profile is actually hosted at <https://homepesasacco.com> rather than some other website. For more context, see this FAQ in the homepesa docs:
+A profile has "authority" if it is hosted at the website it is claiming to be about. For example, if a profile is claiming to be about -- by setting its primary URL to -- <https://murmurations.network>, this obviously has more meaning if the profile is actually hosted at <https://murmurations.network> rather than some other website. For more context, see this FAQ in the Murmurations docs:
 
-<https://docs.homepesasacco.com/faqs/schema.html#what-is-a-primary-url>
+<https://docs.murmurations.network/faqs/schema.html#what-is-a-primary-url>
 
 A node's authority must prioritized by the aggregator when its profile claiming the primary URL is hosted at that primary URL.
 
