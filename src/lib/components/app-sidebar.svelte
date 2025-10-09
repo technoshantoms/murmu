@@ -106,7 +106,7 @@
 								<MapPinIcon class="size-4" />
 							</div>
 							<div class="flex flex-col gap-0.5 leading-none">
-								<span class="font-medium">MurmurMaps</span>
+								<span class="font-medium">Acloudnet</span>
 							</div>
 						</a>
 					{/snippet}

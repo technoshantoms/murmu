@@ -63,9 +63,9 @@
 				<AlertDescription class="mt-4">
 					<Accordion.Root type="single">
 						<Accordion.Item value="item-1" class="border-none">
-							<Accordion.Trigger>What is MurmurMaps?</Accordion.Trigger>
+							<Accordion.Trigger>What is Acloudnet?</Accordion.Trigger>
 							<Accordion.Content>
-								With MurmurMaps you can:
+								With Acloudnet you can:
 								<ul class="list-disc list-inside">
 									<li class="mt-2">
 										Create maps and directories by curating clusters of open, decentralized data
@@ -82,8 +82,8 @@
 						<Accordion.Item value="item-2" class="border-none">
 							<Accordion.Trigger>How do I create my own maps and directories?</Accordion.Trigger>
 							<Accordion.Content>
-								MurmurMaps is open source software. You can find the source code on <a
-									href="https://github.com/MurmurationsNetwork/MurmurMaps"
+								Acloudnet is open source software. You can find the source code on <a
+									href="https://github.com/MurmurationsNetwork/Acloudnet"
 									target="_blank"
 									class="text-primary hover:text-primary/80 underline">GitHub</a
 								>. Download the code and deploy it to a cloud provider (we use Cloudflare).
@@ -94,10 +94,10 @@
 								<Accordion.Trigger>Why should I register?</Accordion.Trigger>
 								<Accordion.Content>
 									Registering allows you to save your data (a single data item is called a profile)
-									to MurmurMaps so it can be indexed in the Murmurations index and made available to
+									to Acloudnet so it can be indexed in the Murmurations index and made available to
 									others to create maps and directories. Go to <b>Tools > Profile Generator</b> to
 									create a single profile or <b>Tools > Batch Importer</b> to import multiple profiles
-									into MurmurMaps from a CSV file.
+									into Acloudnet from a CSV file.
 								</Accordion.Content>
 							</Accordion.Item>
 						{/if}

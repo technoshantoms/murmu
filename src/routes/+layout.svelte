@@ -40,7 +40,7 @@
 	let isOnline: boolean = $state(true);
 	let isReady: boolean = $state(true);
 
-	const siteName = 'MurmurMaps';
+	const siteName = 'Acloudnet';
 	const isAdminRoute = $derived(page.url.pathname.startsWith('/admin'));
 
 	// Define routes that do not require DB status check

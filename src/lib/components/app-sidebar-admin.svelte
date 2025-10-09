@@ -76,7 +76,7 @@
 								<MapPinIcon class="size-4" />
 							</div>
 							<div class="flex flex-col gap-0.5 leading-none">
-								<span class="font-medium">MurmurMaps Admin</span>
+								<span class="font-medium">Acloudnet Admin</span>
 							</div>
 						</a>
 					{/snippet}

@@ -7,7 +7,7 @@
 
 	let { children } = $props();
 
-	const siteName = 'MurmurMaps Admin';
+	const siteName = 'Acloudnet Admin';
 </script>
 
 <svelte:head>
