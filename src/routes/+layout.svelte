@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { refreshRootToken } from '$lib/api/request';
+	import { refreshToken } from '$lib/api/auth-request';
 	import { getUser } from '$lib/api/users';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
@@ -11,7 +11,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { getDelegations, getToken, storeDelegations, storeToken } from '$lib/core';
-	import { getOrCreateKeyPair } from '$lib/crypto';
+	import { exportPublicKey, getOrCreateKeyPair, signRequest } from '$lib/crypto';
 	import { dbStatus } from '$lib/stores/db-status';
 	import {
 		currentTokenStore,
@@ -102,6 +102,11 @@
 
 		// Support /clusters/*/nodes/*
 		if (/^\/clusters\/[^/]+\/nodes\/[^/]+/.test(path)) {
+			return true;
+		}
+
+		// Support /profiles/*
+		if (path.startsWith('/profiles/')) {
 			return true;
 		}
 
@@ -257,8 +262,31 @@
 
 	async function refreshTokenIfNeeded(keypair: CryptoKeyPair) {
 		let isExpired = false;
+		if (rootToken) {
+			isExpired = isUcanExpired(currentToken);
+		}
+
+		if (!rootToken || isExpired) {
+			const xTimer = Math.floor(Date.now()).toString();
+			const requestBody = '{}';
+			const signature = await signRequest(requestBody, keypair.privateKey);
+			const xTimerSignature = await signRequest(xTimer, keypair.privateKey);
+			const publicKey = await exportPublicKey(keypair.publicKey);
+
+			const { success, data } = await refreshToken(signature, xTimer, xTimerSignature, publicKey);
+
+			if (success && data?.token) {
+				rootTokenStore.set(data.token);
+				await storeToken('rootToken', data.token);
 			} else {
+				rootTokenStore.set(null);
+				currentTokenStore.set(null);
+				delegationsStore.set([]);
+			}
+		}
+
 		if (rootToken) isExpired = isUcanExpired(rootToken);
+		if (!rootToken || isExpired) await refreshRootToken(keypair);
 	}
 
 	async function verifyAccessIfNeeded(keypair: CryptoKeyPair, currentPath: string) {
@@ -280,41 +308,51 @@
 			}
 		}
 
-		if (!isPublicRoute(currentPath)) {
-			if (!rootToken || !currentToken) {
-				goto('/register');
-				return;
-			}
+		if (isPublicRoute(currentPath)) {
+			return;
+		   }
+
+		if (!rootToken || !currentToken) {
+			goto('/register');
+			return;
+		}
 
 			const scheme = 'page';
-			let hierPart = currentPath;
-			let namespace = 'client';
-			let isAdminRoute = false;
+		let hierPart = currentPath;
+		let namespace = 'client';
+		let isAdminRoute = false;
 
-			let pathToCheck = currentPath;
-			if (currentPath.includes('/admin')) {
-				isAdminRoute = true;
-				namespace = 'admin';
-				hierPart = currentPath.replace('/admin', '') || '/';
-				pathToCheck = currentPath.replace(/^\/admin/, '') || '/';
-			}
+		let pathToCheck = currentPath;
+		if (currentPath.includes('/admin')) {
+			isAdminRoute = true;
+			namespace = 'admin';
+			hierPart = currentPath.replace('/admin', '') || '/';
+			pathToCheck = currentPath.replace(/^\/admin/, '') || '/';
+		}
 
-			// Only check the first segment of the path. As long as the user has permission for the first segment, they should be able to access the rest of the path
-			const segments = pathToCheck.split('/').filter(Boolean);
-			hierPart = '/' + (segments[0] ?? '');
+		// Only check the first segment of the path. As long as the user has permission for the first segment, they should be able to access the rest of the path
+		const segments = pathToCheck.split('/').filter(Boolean);
+		hierPart = '/' + (segments[0] ?? '');
 
-			const isVerified = await verifyUcanWithCapabilities(
-				currentToken,
-				scheme,
-				hierPart,
-				namespace,
-				['GET']
-			);
+		let isVerified = await verifyUcanWithCapabilities(currentToken, scheme, hierPart, namespace, [
+			'GET'
+		]);
 
-			if (!isVerified) {
-				goto(isAdminRoute ? '/admin/no-access' : '/no-access');
-				return;
-			}
+		if (!isVerified) {
+			await refreshRootToken(keypair);
+			const accessUcan = await issueAccessUcan(rootToken, keypair, 60 * 60);
+			currentTokenStore.set(accessUcan);
+			await storeToken('currentToken', accessUcan);
+
+			// Verify the new token
+			isVerified = await verifyUcanWithCapabilities(currentToken, scheme, hierPart, namespace, [
+				'GET'
+			]);
+		}
+
+		if (!isVerified) {
+			goto(isAdminRoute ? '/admin/no-access' : '/no-access');
+			return;
 		}
 	}
 
