@@ -41,13 +41,15 @@ export const PUT: RequestHandler = async ({
 	params
 }) => {
 	try {
+		const db = getDB(platform.env);
+
 		const id = parseInt(params.id ?? '');
 
 		if (isNaN(id)) {
 			return json({ error: 'Invalid source index ID', success: false }, { status: 400 });
 		}
 
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/source-indexes/*',
 			namespace: 'source-indexes',
@@ -58,7 +60,6 @@ export const PUT: RequestHandler = async ({
 			return json({ error, success: false }, { status });
 		}
 
-		const db = getDB(platform.env);
 		const { url, label, libraryUrl } = await request.json();
 
 		if (!url || !label || !libraryUrl) {
@@ -97,13 +98,15 @@ export const DELETE: RequestHandler = async ({
 	request
 }) => {
 	try {
+		const db = getDB(platform.env);
+
 		const id = parseInt(params.id ?? '');
 
 		if (isNaN(id)) {
 			return json({ error: 'Invalid source index ID', success: false }, { status: 400 });
 		}
 
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/source-indexes/*',
 			namespace: 'source-indexes',
@@ -114,7 +117,6 @@ export const DELETE: RequestHandler = async ({
 			return json({ error, success: false }, { status });
 		}
 
-		const db = getDB(platform.env);
 		const deletedSourceIndex = await deleteSourceIndex(db, id);
 
 		if (deletedSourceIndex?.meta?.changes === 0) {

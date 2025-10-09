@@ -1,6 +1,5 @@
 import { PUBLIC_DATA_PROXY_URL } from '$env/static/public';
 import { getDB } from '$lib/server/db';
-import { getUserIdByPublicKey } from '$lib/server/models/public-key';
 import { authenticateUcanRequest } from '$lib/utils/ucan-utils.server';
 import type { D1Database } from '@cloudflare/workers-types';
 import { json, type RequestHandler } from '@sveltejs/kit';
@@ -10,7 +9,9 @@ export const GET: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const db = getDB(platform.env);
+
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/batches',
 			namespace: 'batches',
@@ -19,14 +20,6 @@ export const GET: RequestHandler = async ({
 
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
-		}
-
-		const db = getDB(platform.env);
-
-		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
-
-		if (!userByPublicKey) {
-			return json({ error: 'User not found', success: false }, { status: 404 });
 		}
 
 		// todo: use last 25 characters of public key as cuid
@@ -55,7 +48,9 @@ export const POST: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const db = getDB(platform.env);
+
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/batches',
 			namespace: 'batches',
@@ -64,13 +59,6 @@ export const POST: RequestHandler = async ({
 
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
-		}
-
-		const db = getDB(platform.env);
-		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
-
-		if (!userByPublicKey) {
-			return json({ error: 'User not found', success: false }, { status: 404 });
 		}
 
 		const formData = await request.formData();
@@ -119,7 +107,9 @@ export const PUT: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const db = getDB(platform.env);
+
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/batches',
 			namespace: 'batches',
@@ -128,13 +118,6 @@ export const PUT: RequestHandler = async ({
 
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
-		}
-
-		const db = getDB(platform.env);
-		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
-
-		if (!userByPublicKey) {
-			return json({ error: 'User not found', success: false }, { status: 404 });
 		}
 
 		const formData = await request.formData();
@@ -184,7 +167,9 @@ export const DELETE: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const db = getDB(platform.env);
+
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/batches',
 			namespace: 'batches',
@@ -193,13 +178,6 @@ export const DELETE: RequestHandler = async ({
 
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
-		}
-
-		const db = getDB(platform.env);
-		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
-
-		if (!userByPublicKey) {
-			return json({ error: 'User not found', success: false }, { status: 404 });
 		}
 
 		const formData = await request.formData();

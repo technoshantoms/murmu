@@ -83,18 +83,6 @@ Start the development server:
 pnpm dev
 ```
 
-PUBLIC_INDEX_URL=http://localhost:8080
-PUBLIC_LIBRARY_URL=http://localhost:8080
-PUBLIC_DATA_PROXY_URL=http://localhost:8080
-PUBLIC_TOOLS_URL=http://192.168.64.7:5173
-
-PRIVATE_RESEND_KEY=876123456789sdfg345678
-
-PUBLIC_SERVER_DID_KEY=did:key:z6Mkoj6WJu7Sda3tYBsGGmZ59ZzwJfhxN2yxReLVe3dPKvBT
-PRIVATE_SERVER_KEY=n+EivYg4NIJIJNOZu3oKSow4J9/8OT7f3gu/ftWOec6Jx7BpwiYt++AlCeiyW3tpQTFjQwDpvGyLUfz1Cqn6gg==
-
-
-
 Your application should now be available locally at: [http://localhost:5173](http://localhost:5173)
 
 ## 5. Setup Admin Role

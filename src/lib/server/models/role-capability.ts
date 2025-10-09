@@ -1,5 +1,5 @@
-import { roleCapabilities } from '$lib/server/db/schema';
-import { eq, inArray } from 'drizzle-orm';
+import { roleCapabilities, userRoles, users } from '$lib/server/db/schema';
+import { eq, inArray, sql } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 
 export async function getCapabilityIdsByRoleId(db: DrizzleD1Database, roleId: number) {
@@ -42,6 +42,23 @@ export async function updateRoleCapabilities(
 		const values = ids.map((capabilityId) => ({ roleId, capabilityId }));
 		await db.insert(roleCapabilities).values(values).run();
 	}
+
+	// update user permissionsVersion
+	const userRows = await db
+		.select({ userId: userRoles.userId })
+		.from(userRoles)
+		.where(eq(userRoles.roleId, roleId))
+		.all();
+
+	const userIds = userRows.map((r) => r.userId);
+
+	if (userIds.length === 0) return;
+
+	await db
+		.update(users)
+		.set({ permissionsVersion: sql`${users.permissionsVersion} + 1` })
+		.where(inArray(users.id, userIds))
+		.run();
 }
 
 function chunk<T>(arr: T[], size: number): T[][] {

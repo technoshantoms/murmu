@@ -11,6 +11,8 @@ export const PUT: RequestHandler = async ({
 	request
 }) => {
 	try {
+		const db = getDB(platform.env);
+
 		const { cuid } = params;
 		const { node_id } = await request.json();
 
@@ -18,7 +20,7 @@ export const PUT: RequestHandler = async ({
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
 		}
 
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/profiles/*/update-node-id',
 			namespace: 'profiles',
@@ -28,8 +30,6 @@ export const PUT: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
-
-		const db = getDB(platform.env);
 
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 

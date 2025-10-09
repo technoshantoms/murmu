@@ -41,11 +41,13 @@ export const POST: RequestHandler = async ({
 	request
 }) => {
 	try {
+		const db = getDB(platform.env);
+
 		const {
 			publicKey,
 			error,
 			status: ucanStatus
-		} = await authenticateUcanRequest(request, {
+		} = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/clusters/*/nodes',
 			namespace: 'clusters',
@@ -56,7 +58,6 @@ export const POST: RequestHandler = async ({
 			return json({ error, success: false }, { status: ucanStatus });
 		}
 
-		const db = getDB(platform.env);
 		const clusterUuid = params?.cluster_uuid;
 		const body = await request.json();
 		const { profileUrl, data, lastUpdated, status, isAvailable, unavailableMessage, hasAuthority } =

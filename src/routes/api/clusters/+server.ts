@@ -25,7 +25,9 @@ export const POST: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const db = getDB(platform.env);
+
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/clusters',
 			namespace: 'clusters',
@@ -36,7 +38,6 @@ export const POST: RequestHandler = async ({
 			return json({ error, success: false }, { status });
 		}
 
-		const db = getDB(platform.env);
 		const body = await request.json();
 		const { name, indexUrl, queryUrl, centerLat, centerLon, scale } = body;
 

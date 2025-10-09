@@ -1,5 +1,5 @@
-import { roles, userRoles } from '$lib/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { roles, userRoles, users } from '$lib/server/db/schema';
+import { eq, sql } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 
 export async function getRoleIdsByUserId(db: DrizzleD1Database, userId: number) {
@@ -33,4 +33,10 @@ export async function updateUserRoles(db: DrizzleD1Database, userId: number, rol
 		const values = roleIds.map((roleId) => ({ userId, roleId }));
 		await db.insert(userRoles).values(values).run();
 	}
+
+	await db
+		.update(users)
+		.set({ permissionsVersion: sql`${users.permissionsVersion} + 1` })
+		.where(eq(users.id, userId))
+		.run();
 }
