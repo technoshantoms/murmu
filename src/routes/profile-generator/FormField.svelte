@@ -13,7 +13,6 @@
 	import type { ProfileArray, ProfileObject, ProfileValue } from '$lib/types/profile';
 	import type { Field } from '$lib/types/schema';
 
-	import type { Writable } from 'svelte/store';
 	import { writable } from 'svelte/store';
 
 	import FormField from './FormField.svelte';
@@ -27,9 +26,9 @@
 		requiredFields?: string[];
 		isParentRequired?: boolean;
 		isParentArray?: boolean;
-		fieldValue?: Writable<{
+		fieldValue?: {
 			[key: string]: ProfileObject | ProfileArray | ProfileValue;
-		}>;
+		};
 		currentProfile?: ProfileObject | ProfileArray | ProfileValue | undefined;
 	}
 
@@ -42,7 +41,7 @@
 		requiredFields = [],
 		isParentRequired = false,
 		isParentArray = false,
-		fieldValue = writable({}),
+		fieldValue = $bindable({}),
 		currentProfile = undefined
 	}: Props = $props();
 
@@ -53,16 +52,16 @@
 			items.set(currentProfile as ProfileObject[]);
 		} else {
 			items.set(currentProfile.map((value) => ({ [fieldName]: value })));
-			fieldValue.update((v) => ({ ...v, [fieldName]: currentProfile }));
+			fieldValue[fieldName] = currentProfile;
 		}
 	} else if (currentProfile && typeof currentProfile === 'object') {
-		fieldValue.set({ ...(currentProfile as ProfileObject) });
+		fieldValue = { ...currentProfile };
 	} else if (currentProfile !== undefined) {
-		fieldValue.update((v) => ({ ...v, [fieldName]: currentProfile }));
+		fieldValue[fieldName] = currentProfile;
 	}
 
 	if (isParentArray) {
-		fieldValue.update((v) => ({ ...v, [fieldName]: v[fieldName] || [] }));
+		fieldValue[fieldName] = fieldValue[fieldName] || [];
 	}
 
 	function addItem(): void {
@@ -105,14 +104,7 @@
 					id={name}
 					{name}
 					required={isParentRequired && requiredFields.includes(fieldName)}
-					value={$fieldValue[fieldName] ?? ''}
-					onchange={(e) =>
-						fieldValue.update((v) => ({
-							...v,
-							[fieldName]: Array.from((e.target as HTMLSelectElement).selectedOptions).map(
-								(o) => o.value
-							)
-						}))}
+					bind:value={fieldValue[fieldName]}
 					multiple
 				>
 					{#each field.enum as option, index (option)}
@@ -125,12 +117,7 @@
 					id={name}
 					{name}
 					required={isParentRequired && requiredFields.includes(fieldName)}
-					value={$fieldValue[fieldName] ?? ''}
-					onchange={(e) =>
-						fieldValue.update((v) => ({
-							...v,
-							[fieldName]: (e.target as HTMLSelectElement).value
-						}))}
+					bind:value={fieldValue[fieldName]}
 				>
 					<option value="">Select an option</option>
 					{#each field.enum as option, index (option)}
@@ -161,9 +148,7 @@
 				required={isParentRequired && requiredFields.includes(fieldName)}
 				maxlength={field.maxLength}
 				pattern={field.pattern}
-				value={$fieldValue[fieldName] ?? ''}
-				on:input={(e) =>
-					fieldValue.update((v) => ({ ...v, [fieldName]: (e.target as HTMLInputElement).value }))}
+				bind:value={fieldValue[fieldName]}
 				class="w-full"
 			/>
 			{#if !hideDescription && field.description}
@@ -190,12 +175,7 @@
 				required={isParentRequired && requiredFields.includes(fieldName)}
 				min={field.minimum}
 				max={field.maximum}
-				value={$fieldValue[fieldName] ?? ''}
-				on:input={(e) =>
-					fieldValue.update((v) => ({
-						...v,
-						[fieldName]: (e.target as HTMLInputElement).valueAsNumber
-					}))}
+				bind:value={fieldValue[fieldName]}
 				class="w-full"
 			/>
 			{#if !hideDescription && field.description}
@@ -211,7 +191,7 @@
 				{requiredFields}
 				isParentRequired={requiredFields.includes(fieldName)}
 				isParentArray={true}
-				{fieldValue}
+				bind:fieldValue
 			/>
 		{:else}
 			<Card class="border-dashed border-2">
@@ -239,7 +219,7 @@
 								hideDescription={field.items.type !== 'object'}
 								{requiredFields}
 								isParentRequired={requiredFields.includes(fieldName)}
-								fieldValue={writable($items[index] as ProfileObject)}
+								bind:fieldValue={$items[index] as ProfileObject}
 							/>
 							<Button
 								type="button"
@@ -283,7 +263,7 @@
 						field={value}
 						requiredFields={field.required}
 						isParentRequired={requiredFields.includes(fieldName)}
-						{fieldValue}
+						bind:fieldValue
 					/>
 				{/each}
 			</CardContent>

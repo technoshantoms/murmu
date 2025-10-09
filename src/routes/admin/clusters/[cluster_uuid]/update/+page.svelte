@@ -164,7 +164,7 @@
 			currentProgress += progressStep;
 			loadingProgress = Math.min(33, Math.round(currentProgress));
 			const existingNode = existingNodes.find(
-				(node: Node) => node.profileUrl === profile.profileUrl
+				(node: Node) => node.profileUrl === profile.profile_url
 			);
 
 			if (profile.status === 'deleted') {
@@ -186,7 +186,7 @@
 			if (existingNode) {
 				existingTimestamp = new Date(existingNode.lastUpdated);
 			}
-			const profileTimestamp = new Date(profile.lastUpdated * 1000);
+			const profileTimestamp = new Date(profile.last_updated * 1000);
 			const shouldUpdate = existingTimestamp.getTime() !== profileTimestamp.getTime();
 
 			if (shouldCreate || shouldUpdate) {
@@ -197,10 +197,10 @@
 
 				if (shouldCreate) {
 					const { data: node } = await createNode(clusterUuid, {
-						profileUrl: profile.profileUrl,
+						profileUrl: profile.profile_url,
 						data: profile_data,
 						status: status,
-						lastUpdated: profile.lastUpdated,
+						lastUpdated: profile.last_updated,
 						isAvailable: is_available ? 1 : 0,
 						unavailableMessage: unavailable_message,
 						hasAuthority: 1
@@ -210,7 +210,7 @@
 					const { data: updatedNode } = await updateNode(clusterUuid, existingNode.id, {
 						data: JSON.parse(existingNode.data),
 						updatedData: profile_data,
-						lastUpdated: profile.lastUpdated,
+						lastUpdated: profile.last_updated,
 						status: existingNode.status,
 						isAvailable: is_available ? 1 : 0,
 						unavailableMessage: unavailable_message,
@@ -236,7 +236,7 @@
 			loadingProgress = Math.min(66, Math.round(currentProgress));
 
 			const { profile_data, is_available, unavailable_message } = await processProfile(
-				profile,
+				JSON.parse(profile.data),
 				indexUrl
 			);
 
