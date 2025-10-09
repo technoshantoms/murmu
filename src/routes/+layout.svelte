@@ -8,6 +8,7 @@
 	import * as Select from '$lib/components/ui/select/index.js';
 	import { Separator } from '$lib/components/ui/separator/index.js';
 	import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { getDelegations, getToken, storeDelegations, storeToken } from '$lib/core';
 	import { exportPublicKey, getOrCreateKeyPair, signRequest } from '$lib/crypto';
@@ -37,6 +38,7 @@
 
 	let isDbOnline: boolean = $state(true);
 	let isOnline: boolean = $state(true);
+	let isReady: boolean = $state(true);
 
 	const siteName = 'MurmurMaps';
 	const isAdminRoute = $derived(page.url.pathname.startsWith('/admin'));
@@ -52,7 +54,9 @@
 	}
 
 	const hiddenRoutes = ['/login', '/register'];
-	const showMenubar = $derived(!hiddenRoutes.includes(page.url.pathname));
+	const showMenubar = $derived(
+		!hiddenRoutes.includes(page.url.pathname) && !page.url.pathname.endsWith('/embed')
+	);
 
 	// Subscribe to stores
 	let rootToken: string | null = $state(null);
@@ -88,8 +92,25 @@
 	function isPublicRoute(path: string): boolean {
 		if (publicRoutes.includes(path)) return true;
 
-		// Support /clusters/*/map and /clusters/*/list
-		return path.startsWith('/clusters/') && (path.endsWith('/map') || path.endsWith('/list'));
+		// Support /clusters/*/map, /clusters/*/list, and /clusters/*/embed
+		if (
+			path.startsWith('/clusters/') &&
+			(path.endsWith('/map') || path.endsWith('/list') || path.endsWith('/embed'))
+		) {
+			return true;
+		}
+
+		// Support /clusters/*/nodes/*
+		if (/^\/clusters\/[^/]+\/nodes\/[^/]+/.test(path)) {
+			return true;
+		}
+
+		// Support /profiles/*
+		if (path.startsWith('/profiles/')) {
+			return true;
+		}
+
+		return false;
 	}
 
 	async function updateCurrentToken(
@@ -224,6 +245,8 @@
 
 			await refreshTokenIfNeeded(keypair);
 			await verifyAccessIfNeeded(keypair, page.url.pathname);
+
+			isReady = true;
 		};
 
 		init();
@@ -367,122 +390,186 @@
 
 <Toaster position="top-center" richColors={true} />
 
-<div class="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-50">
-	{#if delegations.length > 0 && rootToken}
-		<div
-			class="bg-blue-50 border-b border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100"
-		>
-			<div class="container mx-auto px-4 py-3">
-				<div class="flex items-center justify-center space-x-4">
-					<User class="w-4 h-4 text-blue-600 dark:text-blue-400" />
-					<span class="text-sm font-medium">Acting as:</span>
+{#if !isReady}
+	<div class="flex min-h-screen">
+		<div class="w-64 border-r border-slate-200 dark:border-slate-800 p-4 space-y-3">
+			<Skeleton class="h-8 w-40" />
+			<Skeleton class="h-6 w-32" />
+			<Skeleton class="h-6 w-28" />
+			<Skeleton class="h-6 w-36" />
+			<Skeleton class="h-6 w-24" />
+		</div>
 
-					<Select.Root type="single" bind:value={selectValue} onValueChange={handleSelectChange}>
-						<Select.Trigger
-							class="w-[240px] bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-2 focus:ring-slate-950 dark:focus:ring-slate-300 focus:ring-offset-2 rounded-md px-3 py-2 text-sm"
-						>
-							<span class="truncate">{triggerContent}</span>
-						</Select.Trigger>
-						<Select.Content class="min-w-[240px] max-w-[400px]">
-							<Select.Group>
-								<Select.Label
-									class="px-2 py-1.5 text-sm font-semibold text-slate-900 dark:text-slate-50"
-									>Available Accounts</Select.Label
-								>
-								{#each delegationOptions() as option (option.value)}
-									<Select.Item
-										value={option.value}
-										label={option.label}
-										class="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-slate-100 dark:focus:bg-slate-800 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
-									>
-										<div class="flex items-center justify-between w-full min-w-0 overflow-hidden">
-											<span class="truncate flex-1 mr-2">{option.label}</span>
-											{#if option.value !== 'original'}
-												{@const delegation = delegations.find((d) => d.from === option.value)}
-												{#if delegation}
-													<div class="flex items-center space-x-1 text-xs flex-shrink-0">
-														<Clock class="w-3 h-3" />
-														<span
-															class={isDelegationExpired(delegation)
-																? 'text-red-500 dark:text-red-400'
-																: 'text-slate-500 dark:text-slate-400'}
-														>
-															{isDelegationExpired(delegation)
-																? 'Expired'
-																: formatExpirationDate(delegation.expiresAt)}
-														</span>
-													</div>
-												{/if}
-											{/if}
-										</div>
-									</Select.Item>
-								{/each}
-							</Select.Group>
-						</Select.Content>
-					</Select.Root>
+		<div class="flex-1 p-8 space-y-6">
+			<Skeleton class="h-10 w-64" />
+
+			<div class="flex space-x-3">
+				<Skeleton class="h-10 w-32 rounded-md" />
+				<Skeleton class="h-10 w-32 rounded-md" />
+			</div>
+
+			<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+				<div class="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4">
+					<Skeleton class="h-6 w-48" />
+					<Skeleton class="h-4 w-full" />
+					<Skeleton class="h-4 w-5/6" />
+					<Skeleton class="h-4 w-2/3" />
+					<div class="flex space-x-3 pt-4">
+						<Skeleton class="h-8 w-24 rounded-md" />
+						<Skeleton class="h-8 w-24 rounded-md" />
+					</div>
+				</div>
+				<div class="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4">
+					<Skeleton class="h-6 w-48" />
+					<Skeleton class="h-4 w-full" />
+					<Skeleton class="h-4 w-5/6" />
+					<Skeleton class="h-4 w-2/3" />
+					<div class="flex space-x-3 pt-4">
+						<Skeleton class="h-8 w-24 rounded-md" />
+						<Skeleton class="h-8 w-24 rounded-md" />
+					</div>
+				</div>
+				<div class="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4">
+					<Skeleton class="h-6 w-48" />
+					<Skeleton class="h-4 w-full" />
+					<Skeleton class="h-4 w-5/6" />
+					<Skeleton class="h-4 w-2/3" />
+					<div class="flex space-x-3 pt-4">
+						<Skeleton class="h-8 w-24 rounded-md" />
+						<Skeleton class="h-8 w-24 rounded-md" />
+					</div>
+				</div>
+				<div class="p-6 rounded-lg border border-slate-200 dark:border-slate-800 space-y-4">
+					<Skeleton class="h-6 w-48" />
+					<Skeleton class="h-4 w-full" />
+					<Skeleton class="h-4 w-5/6" />
+					<Skeleton class="h-4 w-2/3" />
+					<div class="flex space-x-3 pt-4">
+						<Skeleton class="h-8 w-24 rounded-md" />
+						<Skeleton class="h-8 w-24 rounded-md" />
+					</div>
 				</div>
 			</div>
 		</div>
-	{/if}
-
-	{#if !isAdminRoute && showMenubar}
-		<!-- Status Alerts - Position below delegation bar -->
-		{#if !isOnline}
-			<div class="bg-red-500 border-b border-red-600 text-white shadow-lg">
-				<div class="container mx-auto px-4 py-3">
-					<div class="flex items-center justify-center space-x-2">
-						<WifiOff class="w-5 h-5 text-white" />
-						<span class="font-semibold">OFFLINE</span>
-						<span class="text-red-100">Check your network connection</span>
-					</div>
-				</div>
-			</div>
-		{/if}
-
-		{#if routesWithDbCheck.includes(page.url.pathname) && !isDbOnline}
+	</div>
+{:else}
+	<div class="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-50">
+		{#if delegations.length > 0 && rootToken}
 			<div
-				class="bg-amber-100 border-b border-amber-200 text-amber-800 dark:bg-amber-900 dark:border-amber-800 dark:text-amber-200"
+				class="bg-blue-50 border-b border-blue-200 text-blue-900 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-100"
 			>
 				<div class="container mx-auto px-4 py-3">
-					<div class="flex items-center justify-center space-x-2">
-						<AlertCircle class="w-5 h-5 text-amber-600 dark:text-amber-400" />
-						<span class="font-medium">Database Connection Issue</span>
-						<span class="text-amber-700 dark:text-amber-300"
-							>Unable to connect to the database, please try again in a few minutes</span
-						>
+					<div class="flex items-center justify-center space-x-4">
+						<User class="w-4 h-4 text-blue-600 dark:text-blue-400" />
+						<span class="text-sm font-medium">Acting as:</span>
+
+						<Select.Root type="single" bind:value={selectValue} onValueChange={handleSelectChange}>
+							<Select.Trigger
+								class="w-[240px] bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-50 border border-slate-200 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 focus:ring-2 focus:ring-slate-950 dark:focus:ring-slate-300 focus:ring-offset-2 rounded-md px-3 py-2 text-sm"
+							>
+								<span class="truncate">{triggerContent}</span>
+							</Select.Trigger>
+							<Select.Content class="min-w-[240px] max-w-[400px]">
+								<Select.Group>
+									<Select.Label
+										class="px-2 py-1.5 text-sm font-semibold text-slate-900 dark:text-slate-50"
+										>Available Accounts</Select.Label
+									>
+									{#each delegationOptions() as option (option.value)}
+										<Select.Item
+											value={option.value}
+											label={option.label}
+											class="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-slate-100 dark:focus:bg-slate-800 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+										>
+											<div class="flex items-center justify-between w-full min-w-0 overflow-hidden">
+												<span class="truncate flex-1 mr-2">{option.label}</span>
+												{#if option.value !== 'original'}
+													{@const delegation = delegations.find((d) => d.from === option.value)}
+													{#if delegation}
+														<div class="flex items-center space-x-1 text-xs flex-shrink-0">
+															<Clock class="w-3 h-3" />
+															<span
+																class={isDelegationExpired(delegation)
+																	? 'text-red-500 dark:text-red-400'
+																	: 'text-slate-500 dark:text-slate-400'}
+															>
+																{isDelegationExpired(delegation)
+																	? 'Expired'
+																	: formatExpirationDate(delegation.expiresAt)}
+															</span>
+														</div>
+													{/if}
+												{/if}
+											</div>
+										</Select.Item>
+									{/each}
+								</Select.Group>
+							</Select.Content>
+						</Select.Root>
 					</div>
 				</div>
 			</div>
 		{/if}
 
-		<Sidebar.Provider>
-			<AppSidebar {currentToken} />
-			<Sidebar.Inset>
-				<header class="flex h-16 shrink-0 items-center gap-2 border-b">
-					<div class="flex items-center gap-2 px-3">
-						<Sidebar.Trigger />
-						<Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
-						<Breadcrumb.Root>
-							<Breadcrumb.List>
-								<Breadcrumb.Item>
-									<Breadcrumb.Link href="/">{siteName}</Breadcrumb.Link>
-								</Breadcrumb.Item>
-								{#if page.data.title}
-									<Breadcrumb.Separator />
-									<Breadcrumb.Item>
-										<Breadcrumb.Page>{page.data.title}</Breadcrumb.Page>
-									</Breadcrumb.Item>
-								{/if}
-							</Breadcrumb.List>
-						</Breadcrumb.Root>
+		{#if !isAdminRoute && showMenubar}
+			<!-- Status Alerts - Position below delegation bar -->
+			{#if !isOnline}
+				<div class="bg-red-500 border-b border-red-600 text-white shadow-lg">
+					<div class="container mx-auto px-4 py-3">
+						<div class="flex items-center justify-center space-x-2">
+							<WifiOff class="w-5 h-5 text-white" />
+							<span class="font-semibold">OFFLINE</span>
+							<span class="text-red-100">Check your network connection</span>
+						</div>
 					</div>
-				</header>
-				<div class="flex flex-1 flex-col gap-4">
-					{@render children()}
 				</div>
-			</Sidebar.Inset>
-		</Sidebar.Provider>
-	{:else}
-		{@render children()}
-	{/if}
-</div>
+			{/if}
+
+			{#if routesWithDbCheck.includes(page.url.pathname) && !isDbOnline}
+				<div
+					class="bg-amber-100 border-b border-amber-200 text-amber-800 dark:bg-amber-900 dark:border-amber-800 dark:text-amber-200"
+				>
+					<div class="container mx-auto px-4 py-3">
+						<div class="flex items-center justify-center space-x-2">
+							<AlertCircle class="w-5 h-5 text-amber-600 dark:text-amber-400" />
+							<span class="font-medium">Database Connection Issue</span>
+							<span class="text-amber-700 dark:text-amber-300"
+								>Unable to connect to the database, please try again in a few minutes</span
+							>
+						</div>
+					</div>
+				</div>
+			{/if}
+
+			<Sidebar.Provider>
+				<AppSidebar {currentToken} />
+				<Sidebar.Inset>
+					<header class="flex h-16 shrink-0 items-center gap-2 border-b">
+						<div class="flex items-center gap-2 px-3">
+							<Sidebar.Trigger />
+							<Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
+							<Breadcrumb.Root>
+								<Breadcrumb.List>
+									<Breadcrumb.Item>
+										<Breadcrumb.Link href="/">{siteName}</Breadcrumb.Link>
+									</Breadcrumb.Item>
+									{#if page.data.title}
+										<Breadcrumb.Separator />
+										<Breadcrumb.Item>
+											<Breadcrumb.Page>{page.data.title}</Breadcrumb.Page>
+										</Breadcrumb.Item>
+									{/if}
+								</Breadcrumb.List>
+							</Breadcrumb.Root>
+						</div>
+					</header>
+					<div class="flex flex-1 flex-col gap-4">
+						{@render children()}
+					</div>
+				</Sidebar.Inset>
+			</Sidebar.Provider>
+		{:else}
+			{@render children()}
+		{/if}
+	</div>
+{/if}
