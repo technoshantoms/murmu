@@ -12,13 +12,11 @@ export const POST: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
 		const {
 			publicKey,
 			error,
 			status: ucanStatus
-		} = await authenticateUcanRequest(db, request, {
+		} = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/delegations/receive',
 			namespace: 'delegations',
@@ -35,6 +33,7 @@ export const POST: RequestHandler = async ({
 
 		console.log(expiresAt);
 
+		const db = getDB(platform.env);
 		const fromUserByPublicKey = await getUserIdByPublicKey(db, removeDidPrefix(fromDid));
 
 		if (!fromUserByPublicKey) {

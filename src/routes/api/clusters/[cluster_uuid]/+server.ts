@@ -40,9 +40,7 @@ export const PUT: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/clusters/*',
 			namespace: 'clusters',
@@ -53,6 +51,7 @@ export const PUT: RequestHandler = async ({
 			return json({ error, success: false }, { status });
 		}
 
+		const db = getDB(platform.env);
 		const clusterUuid = params.cluster_uuid;
 
 		if (!clusterUuid) {
@@ -94,9 +93,7 @@ export const DELETE: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/clusters/*',
 			namespace: 'clusters',
@@ -107,6 +104,7 @@ export const DELETE: RequestHandler = async ({
 			return json({ error, success: false }, { status });
 		}
 
+		const db = getDB(platform.env);
 		const clusterUuid = params.cluster_uuid;
 
 		if (!clusterUuid) {

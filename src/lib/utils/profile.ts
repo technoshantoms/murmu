@@ -55,12 +55,28 @@ export async function fetchProfiles(indexUrl: string, queryUrl: string) {
 	}
 
 	const data = await response.json();
+	const profiles = toCamelCase(data?.data ?? []);
 
-	return data?.data ?? [];
+	return profiles;
+}
+
+export function toCamelCase<T extends Record<string, unknown>>(obj: T): T {
+	if (Array.isArray(obj)) {
+		return obj.map((v) => toCamelCase(v)) as unknown as T;
+	} else if (obj !== null && typeof obj === 'object') {
+		const result = {} as Record<string, unknown>;
+		for (const [key, value] of Object.entries(obj)) {
+			const camelKey = key.replace(/_([a-z])/g, (_, g) => g.toUpperCase());
+			result[camelKey] =
+				value && typeof value === 'object' ? toCamelCase(value as Record<string, unknown>) : value;
+		}
+		return result as T;
+	}
+	return obj;
 }
 
 export async function processProfile(profile: ProfileData, sourceIndex: string) {
-	const { profileData, fetchProfileError } = await fetchProfileData(profile.profile_url as string);
+	const { profileData, fetchProfileError } = await fetchProfileData(profile.profileUrl as string);
 	let isValid = false;
 	let unavailableMessage = '';
 

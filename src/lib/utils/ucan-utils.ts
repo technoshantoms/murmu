@@ -52,7 +52,6 @@ export async function issueAccessUcan(
 		audience: PUBLIC_SERVER_DID_KEY,
 		lifetimeInSeconds,
 		capabilities: currentUcan.payload.att,
-		facts: currentUcan.payload.fct,
 		proofs: [currentToken]
 	});
 
@@ -89,7 +88,7 @@ export async function verifyUcanWithCapabilities(
 	}
 }
 
-export function isUcanExpired(encodedUcan: string): boolean {
+export async function isUcanExpired(encodedUcan: string): Promise<boolean> {
 	try {
 		const ucan = ucans.parse(encodedUcan);
 		const now = Math.floor(Date.now() / 1000);

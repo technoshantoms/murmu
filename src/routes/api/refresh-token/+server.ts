@@ -2,7 +2,6 @@ import { PRIVATE_SERVER_KEY } from '$env/static/private';
 import { authenticateRequest } from '$lib/server/auth';
 import { getCapabilitiesByIds } from '$lib/server/models/capability';
 import { getCapabilityIdsByRoleIds } from '$lib/server/models/role-capability';
-import { getPermissionsVersionByUserId } from '$lib/server/models/user';
 import { getRoleIdsByUserId } from '$lib/server/models/user-role';
 import type { UcanCapability } from '$lib/types/ucan';
 import { buildUcanWithCapabilities } from '$lib/utils/ucan-utils.server';
@@ -41,7 +40,6 @@ export const POST: RequestHandler = async ({
 		const roleIds = await getRoleIdsByUserId(db, userId);
 		const capabilityIds = await getCapabilityIdsByRoleIds(db, roleIds);
 		const capabilities = await getCapabilitiesByIds(db, capabilityIds);
-		const permissionsVersion = await getPermissionsVersionByUserId(db, userId);
 
 		const ucanCapabilities: UcanCapability[] = capabilities.map((capability) => ({
 			scheme: capability.scheme,
@@ -50,12 +48,7 @@ export const POST: RequestHandler = async ({
 			segments: [capability.segments]
 		}));
 
-		const token = await buildUcanWithCapabilities(
-			xPublicKey,
-			60 * 60,
-			ucanCapabilities,
-			permissionsVersion
-		);
+		const token = await buildUcanWithCapabilities(xPublicKey, 60 * 60, ucanCapabilities);
 
 		return json({ data: { token }, success: true }, { status: 200 });
 	} catch (error) {

@@ -89,7 +89,7 @@ export const POST: RequestHandler = async ({
 			segments: [capability.segments]
 		}));
 
-		const token = await buildUcanWithCapabilities(xPublicKey, 10 * 60, ucanCapabilities, 1);
+		const token = await buildUcanWithCapabilities(xPublicKey, 10 * 60, ucanCapabilities);
 
 		return json({ data: { token }, success: true }, { status: 201 });
 	} catch (error) {

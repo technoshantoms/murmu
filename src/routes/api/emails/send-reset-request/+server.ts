@@ -21,13 +21,11 @@ export const POST: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
 		const {
 			publicKey,
 			error: ucanError,
 			status
-		} = await authenticateUcanRequest(db, request, {
+		} = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/emails/send-reset-request',
 			namespace: 'emails',
@@ -44,6 +42,7 @@ export const POST: RequestHandler = async ({
 			return json({ error: 'Missing email', success: false }, { status: 400 });
 		}
 
+		const db = getDB(platform.env);
 		const userId = await getUserIdByEmail(db, email.toLowerCase());
 		if (!userId) {
 			return json(

@@ -13,14 +13,12 @@ export const GET: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
 		const { cuid } = params;
 		if (!cuid) {
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
 		}
 
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/profiles/*',
 			namespace: 'profiles',
@@ -30,6 +28,8 @@ export const GET: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
+
+		const db = getDB(platform.env);
 
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 
@@ -62,11 +62,9 @@ export const PATCH: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
 		const { cuid } = params;
 
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/profiles/*',
 			namespace: 'profiles',
@@ -76,6 +74,8 @@ export const PATCH: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
+
+		const db = getDB(platform.env);
 
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 
@@ -137,15 +137,13 @@ export const DELETE: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
 		const { cuid } = params;
 
 		if (!cuid) {
 			return json({ error: 'Missing cuid', success: false }, { status: 400 });
 		}
 
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/profiles/*',
 			namespace: 'profiles',
@@ -155,6 +153,8 @@ export const DELETE: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
+
+		const db = getDB(platform.env);
 
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 

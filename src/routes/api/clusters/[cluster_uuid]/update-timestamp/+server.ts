@@ -11,13 +11,11 @@ export const PATCH: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
 		const {
 			publicKey,
 			error,
 			status: ucanStatus
-		} = await authenticateUcanRequest(db, request, {
+		} = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/clusters/*/update-timestamp',
 			namespace: 'clusters',
@@ -28,6 +26,7 @@ export const PATCH: RequestHandler = async ({
 			return json({ error, success: false }, { status: ucanStatus });
 		}
 
+		const db = getDB(platform.env);
 		const clusterUuid = params.cluster_uuid;
 		const { lastUpdated } = await request.json();
 

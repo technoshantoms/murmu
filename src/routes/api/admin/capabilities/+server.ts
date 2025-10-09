@@ -11,9 +11,7 @@ export const GET: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/admin/capabilities',
 			namespace: 'admin-capabilities',
@@ -23,6 +21,8 @@ export const GET: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
+
+		const db = getDB(platform.env);
 
 		const allCapabilities = await getCapabilities(db);
 
@@ -38,9 +38,7 @@ export const POST: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/admin/capabilities',
 			namespace: 'admin-capabilities',
@@ -56,6 +54,8 @@ export const POST: RequestHandler = async ({
 		if (!scheme || !hierPart || !namespace || !segments) {
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
 		}
+
+		const db = getDB(platform.env);
 
 		await createCapability(db, {
 			scheme,

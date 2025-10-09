@@ -190,10 +190,10 @@
 				);
 
 				const nodeData: NodeCreateInput = {
-					profileUrl: rawNodes[i].profile_url as string,
+					profileUrl: rawNodes[i].profileUrl as string,
 					data: profile_data,
 					status: status,
-					lastUpdated: rawNodes[i].last_updated,
+					lastUpdated: rawNodes[i].lastUpdated,
 					isAvailable: is_available ? 1 : 0,
 					unavailableMessage: unavailable_message,
 					hasAuthority: 1

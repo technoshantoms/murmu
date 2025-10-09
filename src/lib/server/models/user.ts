@@ -86,13 +86,3 @@ export async function getUsersWithRoleNames(db: DrizzleD1Database) {
 
 	return Array.from(map.values());
 }
-
-export async function getPermissionsVersionByUserId(db: DrizzleD1Database, userId: number) {
-	const result = await db
-		.select({ permissionsVersion: users.permissionsVersion })
-		.from(users)
-		.where(eq(users.id, userId))
-		.get();
-
-	return result?.permissionsVersion ?? 1;
-}

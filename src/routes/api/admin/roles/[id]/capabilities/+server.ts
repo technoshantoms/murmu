@@ -21,9 +21,7 @@ export const GET: RequestHandler = async ({
 	}
 
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/admin/roles/*/capabilities',
 			namespace: 'admin-roles',
@@ -33,6 +31,8 @@ export const GET: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
+
+		const db = getDB(platform.env);
 
 		const roleIds = await getCapabilityIdsByRoleId(db, Number(userId));
 
@@ -61,9 +61,7 @@ export const POST: RequestHandler = async ({
 	}
 
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/admin/roles/*/capabilities',
 			namespace: 'admin-roles',
@@ -79,6 +77,8 @@ export const POST: RequestHandler = async ({
 		if (!Array.isArray(capability_ids)) {
 			return json({ error: 'capability_ids must be an array', success: false }, { status: 400 });
 		}
+
+		const db = getDB(platform.env);
 
 		await updateRoleCapabilities(db, Number(roleId), capability_ids);
 

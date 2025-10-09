@@ -11,9 +11,7 @@ export const PATCH: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/users/site-hints',
 			namespace: 'users',
@@ -23,6 +21,8 @@ export const PATCH: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
+
+		const db = getDB(platform.env);
 
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 

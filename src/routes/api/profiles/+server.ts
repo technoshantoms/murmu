@@ -66,7 +66,7 @@ export const POST: RequestHandler = async ({
 
 		const { linkedSchemas, title, profile, nodeId, lastUpdated } = await request.json();
 
-		if (!linkedSchemas || !title || !profile || !nodeId || !lastUpdated) {
+		if (!linkedSchemas || !title || !profile || !lastUpdated) {
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
 		}
 

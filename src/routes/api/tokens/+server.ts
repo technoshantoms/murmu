@@ -16,9 +16,7 @@ export const GET: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/keys',
 			namespace: 'keys',
@@ -28,6 +26,8 @@ export const GET: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
+
+		const db = getDB(platform.env);
 
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 
@@ -49,9 +49,7 @@ export const POST: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/tokens',
 			namespace: 'tokens',
@@ -61,6 +59,8 @@ export const POST: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
+
+		const db = getDB(platform.env);
 
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 
@@ -84,9 +84,7 @@ export const DELETE: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/tokens',
 			namespace: 'tokens',
@@ -96,6 +94,8 @@ export const DELETE: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
+
+		const db = getDB(platform.env);
 
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 

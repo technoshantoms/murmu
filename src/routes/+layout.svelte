@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { refreshRootToken } from '$lib/api/request';
+	import { refreshToken } from '$lib/api/auth-request';
 	import { getUser } from '$lib/api/users';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
@@ -11,7 +11,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { getDelegations, getToken, storeDelegations, storeToken } from '$lib/core';
-	import { getOrCreateKeyPair } from '$lib/crypto';
+	import { exportPublicKey, getOrCreateKeyPair, signRequest } from '$lib/crypto';
 	import { dbStatus } from '$lib/stores/db-status';
 	import {
 		currentTokenStore,
@@ -102,6 +102,11 @@
 
 		// Support /clusters/*/nodes/*
 		if (/^\/clusters\/[^/]+\/nodes\/[^/]+/.test(path)) {
+			return true;
+		}
+
+		// Support /profiles/*
+		if (path.startsWith('/profiles/')) {
 			return true;
 		}
 
@@ -257,8 +262,28 @@
 
 	async function refreshTokenIfNeeded(keypair: CryptoKeyPair) {
 		let isExpired = false;
-		if (rootToken) isExpired = isUcanExpired(rootToken);
-		if (!rootToken || isExpired) await refreshRootToken(keypair);
+		if (rootToken) {
+			isExpired = await isUcanExpired(rootToken);
+		}
+
+		if (!rootToken || isExpired) {
+			const xTimer = Math.floor(Date.now()).toString();
+			const requestBody = '{}';
+			const signature = await signRequest(requestBody, keypair.privateKey);
+			const xTimerSignature = await signRequest(xTimer, keypair.privateKey);
+			const publicKey = await exportPublicKey(keypair.publicKey);
+
+			const { success, data } = await refreshToken(signature, xTimer, xTimerSignature, publicKey);
+
+			if (success && data?.token) {
+				rootTokenStore.set(data.token);
+				await storeToken('rootToken', data.token);
+			} else {
+				rootTokenStore.set(null);
+				currentTokenStore.set(null);
+				delegationsStore.set([]);
+			}
+		}
 	}
 
 	async function verifyAccessIfNeeded(keypair: CryptoKeyPair, currentPath: string) {
@@ -270,7 +295,7 @@
 		if (rootToken) {
 			let isExpired = false;
 			if (currentToken) {
-				isExpired = isUcanExpired(currentToken);
+				isExpired = await isUcanExpired(currentToken);
 			}
 
 			if (!currentToken || isExpired) {

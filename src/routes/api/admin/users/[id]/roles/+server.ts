@@ -18,9 +18,7 @@ export const GET: RequestHandler = async ({
 	}
 
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/admin/users/*/roles',
 			namespace: 'admin-users',
@@ -30,6 +28,8 @@ export const GET: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
+
+		const db = getDB(platform.env);
 
 		const roleIds = await getRoleIdsByUserId(db, Number(userId));
 
@@ -58,9 +58,7 @@ export const POST: RequestHandler = async ({
 	}
 
 	try {
-		const db = getDB(platform.env);
-
-		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(request, {
 			scheme: 'api',
 			hierPart: '/admin/users/*/roles',
 			namespace: 'admin-users',
@@ -76,6 +74,8 @@ export const POST: RequestHandler = async ({
 		if (!role_ids) {
 			return json({ error: 'Role IDs are required', success: false }, { status: 400 });
 		}
+
+		const db = getDB(platform.env);
 
 		const roleIdsExist = await checkRoleIdsExist(db, role_ids);
 
