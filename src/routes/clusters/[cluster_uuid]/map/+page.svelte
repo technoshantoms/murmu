@@ -1,15 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { getPublishedMapNodes } from '$lib/api/nodes';
-	import { Button } from '$lib/components/ui/button';
+	import { Button, buttonVariants } from '$lib/components/ui/button';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
+	import { Label } from '$lib/components/ui/label';
+	import * as Popover from '$lib/components/ui/popover';
 	import * as Select from '$lib/components/ui/select';
+	import { Switch } from '$lib/components/ui/switch/index.js';
 	import { Map, MarkerCluster, TileLayer } from '$lib/svelte-leaflet';
 	import type { ClusterPublic } from '$lib/types/cluster';
 	import type { DropdownField } from '$lib/types/enum-dropdown';
 	import type { MapNode } from '$lib/types/node';
-	import { AlertCircle, ArrowLeft, Search, Tag } from '@lucide/svelte';
+	import { AlertCircle, ArrowLeft, Check, Code, Copy, Search, Tag } from '@lucide/svelte';
 	import L, { MarkerClusterGroup } from 'leaflet';
 
 	import { untrack } from 'svelte';
@@ -26,6 +29,13 @@
 	let enumsDropdown: DropdownField[] = $state(data?.enumsDropdown ?? []);
 	let enumFilters: Record<string, string> = $state(data?.enumFilters ?? {});
 	let clusterInstance: MarkerClusterGroup | undefined = $state();
+
+	// Iframe configuration
+	let iframeCopied: boolean = $state(false);
+	let iframeWidth: string = $state('100%');
+	let iframeHeight: string = $state('600');
+	let iframeBorder: string = $state('0');
+	let showSearchBar: boolean = $state(true);
 
 	function getDropdownTriggerContent(dropdown: DropdownField, fieldName: string) {
 		const selectedValue = enumFilters[fieldName];
@@ -117,6 +127,29 @@
 	function hasActiveFilters() {
 		return nameSearch.trim() || tagSearch.trim() || Object.values(enumFilters).some((v) => v);
 	}
+
+	function getIframeCode() {
+		const embedUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/clusters/${cluster.clusterUuid}/embed`;
+		const urlParams = new SvelteURLSearchParams();
+		urlParams.set('showSearch', showSearchBar.toString());
+
+		const fullUrl = `${embedUrl}?${urlParams.toString()}`;
+		return `<iframe src="${fullUrl}" width="${iframeWidth}" height="${iframeHeight}" frameborder="${iframeBorder}" style="border:0;" allowfullscreen="" loading="lazy"></iframe>`;
+	}
+
+	async function copyIframeCode() {
+		const iframeCode = getIframeCode();
+
+		try {
+			await navigator.clipboard.writeText(iframeCode);
+			iframeCopied = true;
+			setTimeout(() => {
+				iframeCopied = false;
+			}, 2000);
+		} catch (err) {
+			console.error('Failed to copy iframe code:', err);
+		}
+	}
 </script>
 
 <div class="container mx-auto py-4">
@@ -130,10 +163,64 @@
 		</div>
 	{:else}
 		<div class="space-y-6">
-			<Button variant="outline" size="sm" href="/">
-				<ArrowLeft class="h-4 w-4" />
-				Back to Home
-			</Button>
+			<div class="flex items-center justify-between">
+				<Button variant="outline" size="sm" href="/">
+					<ArrowLeft class="h-4 w-4" />
+					Back to Home
+				</Button>
+				<Popover.Root>
+					<Popover.Trigger class={buttonVariants({ variant: 'default', size: 'sm' })}>
+						<Code class="h-4 w-4 mr-2" />
+						Embed Map
+					</Popover.Trigger>
+					<Popover.Content class="w-96">
+						<div class="grid gap-4">
+							<div class="space-y-2">
+								<h4 class="font-medium leading-none">Embed Configuration</h4>
+								<p class="text-muted-foreground text-sm">
+									Customize the iframe settings for embedding this map.
+								</p>
+							</div>
+							<div class="grid gap-3">
+								<div class="grid grid-cols-3 items-center gap-4">
+									<Label for="width">Width</Label>
+									<Input id="width" bind:value={iframeWidth} class="col-span-2 h-8" />
+								</div>
+								<div class="grid grid-cols-3 items-center gap-4">
+									<Label for="height">Height</Label>
+									<Input id="height" bind:value={iframeHeight} class="col-span-2 h-8" />
+								</div>
+								<div class="grid grid-cols-3 items-center gap-4">
+									<Label for="border">Border</Label>
+									<Input id="border" bind:value={iframeBorder} class="col-span-2 h-8" />
+								</div>
+								<div class="flex items-center justify-between">
+									<Label for="show-search">Show Search Bar</Label>
+									<Switch id="show-search" bind:checked={showSearchBar} />
+								</div>
+							</div>
+							<div class="space-y-2">
+								<Label for="iframe-code">Iframe Code</Label>
+								<textarea
+									id="iframe-code"
+									readonly
+									class="w-full h-20 p-2 text-xs border rounded resize-none bg-muted"
+									value={getIframeCode()}
+								></textarea>
+							</div>
+							<Button onclick={copyIframeCode} class="w-full">
+								{#if iframeCopied}
+									<Check class="h-4 w-4 mr-2" />
+									Copied!
+								{:else}
+									<Copy class="h-4 w-4 mr-2" />
+									Copy Iframe Code
+								{/if}
+							</Button>
+						</div>
+					</Popover.Content>
+				</Popover.Root>
+			</div>
 
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-4">
