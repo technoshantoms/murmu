@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { beforeNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { refreshToken } from '$lib/api/auth-request';
+	import { refreshRootToken } from '$lib/api/request';
 	import { getUser } from '$lib/api/users';
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import * as Breadcrumb from '$lib/components/ui/breadcrumb/index.js';
@@ -11,7 +11,7 @@
 	import { Skeleton } from '$lib/components/ui/skeleton/index.js';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { getDelegations, getToken, storeDelegations, storeToken } from '$lib/core';
-	import { exportPublicKey, getOrCreateKeyPair, signRequest } from '$lib/crypto';
+	import { getOrCreateKeyPair } from '$lib/crypto';
 	import { dbStatus } from '$lib/stores/db-status';
 	import {
 		currentTokenStore,
@@ -38,7 +38,7 @@
 
 	let isDbOnline: boolean = $state(true);
 	let isOnline: boolean = $state(true);
-	let isReady: boolean = $state(false);
+	let isReady: boolean = $state(true);
 
 	const siteName = 'MurmurMaps';
 	const isAdminRoute = $derived(page.url.pathname.startsWith('/admin'));
@@ -262,28 +262,8 @@
 
 	async function refreshTokenIfNeeded(keypair: CryptoKeyPair) {
 		let isExpired = false;
-		if (rootToken) {
-			isExpired = await isUcanExpired(rootToken);
-		}
-
-		if (!rootToken || isExpired) {
-			const xTimer = Math.floor(Date.now()).toString();
-			const requestBody = '{}';
-			const signature = await signRequest(requestBody, keypair.privateKey);
-			const xTimerSignature = await signRequest(xTimer, keypair.privateKey);
-			const publicKey = await exportPublicKey(keypair.publicKey);
-
-			const { success, data } = await refreshToken(signature, xTimer, xTimerSignature, publicKey);
-
-			if (success && data?.token) {
-				rootTokenStore.set(data.token);
-				await storeToken('rootToken', data.token);
-			} else {
-				rootTokenStore.set(null);
-				currentTokenStore.set(null);
-				delegationsStore.set([]);
-			}
-		}
+		if (rootToken) isExpired = isUcanExpired(rootToken);
+		if (!rootToken || isExpired) await refreshRootToken(keypair);
 	}
 
 	async function verifyAccessIfNeeded(keypair: CryptoKeyPair, currentPath: string) {
@@ -292,10 +272,11 @@
 			return;
 		}
 
+		// Check if the current token is expired and refresh it if needed
 		if (rootToken) {
 			let isExpired = false;
 			if (currentToken) {
-				isExpired = await isUcanExpired(currentToken);
+				isExpired = isUcanExpired(currentToken);
 			}
 
 			if (!currentToken || isExpired) {
@@ -305,41 +286,52 @@
 			}
 		}
 
-		if (!isPublicRoute(currentPath)) {
-			if (!rootToken || !currentToken) {
-				goto('/register');
-				return;
-			}
+		// Public routes don't need to be verified
+		if (isPublicRoute(currentPath)) {
+			return;
+		}
 
-			const scheme = 'page';
-			let hierPart = currentPath;
-			let namespace = 'client';
-			let isAdminRoute = false;
+		if (!rootToken || !currentToken) {
+			goto('/register');
+			return;
+		}
 
-			let pathToCheck = currentPath;
-			if (currentPath.includes('/admin')) {
-				isAdminRoute = true;
-				namespace = 'admin';
-				hierPart = currentPath.replace('/admin', '') || '/';
-				pathToCheck = currentPath.replace(/^\/admin/, '') || '/';
-			}
+		const scheme = 'page';
+		let hierPart = currentPath;
+		let namespace = 'client';
+		let isAdminRoute = false;
 
-			// Only check the first segment of the path. As long as the user has permission for the first segment, they should be able to access the rest of the path
-			const segments = pathToCheck.split('/').filter(Boolean);
-			hierPart = '/' + (segments[0] ?? '');
+		let pathToCheck = currentPath;
+		if (currentPath.includes('/admin')) {
+			isAdminRoute = true;
+			namespace = 'admin';
+			hierPart = currentPath.replace('/admin', '') || '/';
+			pathToCheck = currentPath.replace(/^\/admin/, '') || '/';
+		}
 
-			const isVerified = await verifyUcanWithCapabilities(
-				currentToken,
-				scheme,
-				hierPart,
-				namespace,
-				['GET']
-			);
+		// Only check the first segment of the path. As long as the user has permission for the first segment, they should be able to access the rest of the path
+		const segments = pathToCheck.split('/').filter(Boolean);
+		hierPart = '/' + (segments[0] ?? '');
 
-			if (!isVerified) {
-				goto(isAdminRoute ? '/admin/no-access' : '/no-access');
-				return;
-			}
+		let isVerified = await verifyUcanWithCapabilities(currentToken, scheme, hierPart, namespace, [
+			'GET'
+		]);
+
+		if (!isVerified) {
+			await refreshRootToken(keypair);
+			const accessUcan = await issueAccessUcan(rootToken, keypair, 60 * 60);
+			currentTokenStore.set(accessUcan);
+			await storeToken('currentToken', accessUcan);
+
+			// Verify the new token
+			isVerified = await verifyUcanWithCapabilities(currentToken, scheme, hierPart, namespace, [
+				'GET'
+			]);
+		}
+
+		if (!isVerified) {
+			goto(isAdminRoute ? '/admin/no-access' : '/no-access');
+			return;
 		}
 	}
 

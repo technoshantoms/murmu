@@ -13,7 +13,9 @@ export const GET: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const db = getDB(platform.env);
+
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/profiles',
 			namespace: 'profiles',
@@ -23,8 +25,6 @@ export const GET: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
-
-		const db = getDB(platform.env);
 
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 
@@ -46,7 +46,9 @@ export const POST: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const db = getDB(platform.env);
+
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/profiles',
 			namespace: 'profiles',
@@ -57,7 +59,6 @@ export const POST: RequestHandler = async ({
 			return json({ error, success: false }, { status });
 		}
 
-		const db = getDB(platform.env);
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 
 		if (!userByPublicKey) {

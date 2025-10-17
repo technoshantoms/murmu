@@ -1,13 +1,5 @@
 # Murmurations Aggregator
 
-PUBLIC_INDEX_URL=https://test-index.murmurations.network
-PUBLIC_LIBRARY_URL=https://test-library.murmurations.network
-PUBLIC_DATA_PROXY_URL=https://test-data-proxy.murmurations.network
-
-PUBLIC_TOOLS_URL=http://localhost:5173
-
-PRIVATE_RESEND_KEY=<YOUR_API_KEY>
-	
 ## Local Setup Guide
 
 This guide will help you set up and run the Murmurations Aggregator locally. Follow the steps in order to ensure a smooth installation.

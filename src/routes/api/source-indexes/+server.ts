@@ -29,13 +29,15 @@ export const POST: RequestHandler = async ({
 	request
 }) => {
 	try {
+		const db = getDB(platform.env);
+
 		const { url, label, libraryUrl } = await request.json();
 
 		if (!url || !label || !libraryUrl) {
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
 		}
 
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/source-indexes',
 			namespace: 'source-indexes',
@@ -46,7 +48,6 @@ export const POST: RequestHandler = async ({
 			return json({ error, success: false }, { status });
 		}
 
-		const db = getDB(platform.env);
 		const existingSourceIndex = await getSourceIndexByUrl(db, url);
 
 		if (existingSourceIndex) {

@@ -67,6 +67,7 @@ export const users = sqliteTable('users', {
 	normalizedName: text('normalized_name').unique().notNull(),
 	emailReset: integer('email_reset', { mode: 'boolean' }).notNull().default(false),
 	enableSiteHints: integer('enable_site_hints', { mode: 'boolean' }).notNull().default(true),
+	permissionsVersion: integer('permissions_version').notNull().default(1),
 	createdAt: integer('created_at', { mode: 'number' })
 		.notNull()
 		.default(sql`(unixepoch())`),

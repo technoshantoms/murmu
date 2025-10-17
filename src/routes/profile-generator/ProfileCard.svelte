@@ -46,15 +46,18 @@
 	dbStatus.subscribe((value) => (isDbOnline = value));
 
 	// Use svelte-query to fetch status
-	const statusQuery = createQuery({
+	const statusQuery = createQuery(() => ({
 		queryKey: ['status', node_id],
 		queryFn: fetchStatus,
 		refetchInterval: 5000
-	});
+	}));
 
 	$effect(() => {
-		status = $statusQuery.data ?? status;
-		statusVariant = getStatusVariant(status);
+		const data = statusQuery.data;
+		if (data !== undefined) {
+			status = data ?? 'unknown';
+			statusVariant = getStatusVariant(status);
+		}
 	});
 
 	async function fetchStatus(): Promise<string> {

@@ -11,7 +11,9 @@ export const GET: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const db = getDB(platform.env);
+
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/admin/roles',
 			namespace: 'admin-roles',
@@ -21,8 +23,6 @@ export const GET: RequestHandler = async ({
 		if (!publicKey) {
 			return json({ error, success: false }, { status });
 		}
-
-		const db = getDB(platform.env);
 
 		const allRoles = await getRoles(db);
 
@@ -38,7 +38,9 @@ export const POST: RequestHandler = async ({
 	request
 }) => {
 	try {
-		const { publicKey, error, status } = await authenticateUcanRequest(request, {
+		const db = getDB(platform.env);
+
+		const { publicKey, error, status } = await authenticateUcanRequest(db, request, {
 			scheme: 'api',
 			hierPart: '/users',
 			namespace: 'users',
@@ -64,8 +66,6 @@ export const POST: RequestHandler = async ({
 				{ status: 400 }
 			);
 		}
-
-		const db = getDB(platform.env);
 
 		// Check if role with this name already exists
 		const existingRoles = await getRoles(db);
