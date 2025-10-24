@@ -85,7 +85,7 @@ export const PUT: RequestHandler = async ({
 
 		const node: NodeDbUpdateInput = {
 			data: JSON.stringify(data),
-			updatedData: updatedData ? JSON.stringify(updatedData) : undefined,
+			updatedData: updatedData ? JSON.stringify(updatedData) : null,
 			status,
 			lastUpdated,
 			isAvailable,

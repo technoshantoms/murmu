@@ -40,8 +40,8 @@
 	let sourceIndex = $state(sourceIndexOptions[0].url);
 	let schema = $state(schemaOptions[0]?.value || '');
 	let name = $state('');
-	let latitude = $state(0);
-	let longitude = $state(0);
+	let lat = $state(0);
+	let lon = $state(0);
 	let range = $state('');
 	let locality = $state('');
 	let region = $state('');
@@ -219,8 +219,8 @@
 
 		if (schema) queryParams.push(`schema=${encodeURIComponent(schema)}`);
 		if (name) queryParams.push(`name=${encodeURIComponent(name)}`);
-		if (latitude) queryParams.push(`latitude=${encodeURIComponent(latitude)}`);
-		if (longitude) queryParams.push(`longitude=${encodeURIComponent(longitude)}`);
+		if (lat) queryParams.push(`lat=${encodeURIComponent(lat)}`);
+		if (lon) queryParams.push(`lon=${encodeURIComponent(lon)}`);
 		if (range) queryParams.push(`range=${encodeURIComponent(range)}`);
 		if (locality) queryParams.push(`locality=${encodeURIComponent(locality)}`);
 		if (region) queryParams.push(`region=${encodeURIComponent(region)}`);
@@ -426,14 +426,14 @@
 							</div>
 
 							<div class="grid gap-2">
-								<Label for="latitude">Latitude</Label>
+								<Label for="lat">Latitude</Label>
 								<Input
 									type="number"
 									min="-90"
 									max="90"
 									step="0.000001"
-									id="latitude"
-									bind:value={latitude}
+									id="lat"
+									bind:value={lat}
 									class="w-full"
 									placeholder="Enter latitude"
 								/>
@@ -443,14 +443,14 @@
 							</div>
 
 							<div class="grid gap-2">
-								<Label for="longitude">Longitude</Label>
+								<Label for="lon">Longitude</Label>
 								<Input
 									type="number"
 									min="-180"
 									max="180"
 									step="0.000001"
-									id="longitude"
-									bind:value={longitude}
+									id="lon"
+									bind:value={lon}
 									class="w-full"
 									placeholder="Enter longitude"
 								/>

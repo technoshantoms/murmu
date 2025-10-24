@@ -1,6 +1,7 @@
 {
 	"name": "murmurations-aggregator",
-	"compatibility_date": "2025-05-05",
+	"compatibility_date": "2025-09-15",
+	"compatibility_flags": ["nodejs_compat_v2"],
 	"d1_databases": [
 		{
 			"binding": "DB",

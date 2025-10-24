@@ -23,7 +23,15 @@ export const GET: RequestHandler = async ({
 
 		const parsedProfile = JSON.parse(profile.profile ?? '{}');
 
-		return json(parsedProfile, { status: 200 });
+		return json(parsedProfile, {
+			status: 200,
+			headers: {
+				'Content-Type': 'application/json',
+				'Access-Control-Allow-Origin': '*',
+				'Access-Control-Allow-Methods': 'GET, OPTIONS',
+				'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+			}
+		});
 	} catch (err) {
 		console.error('Error fetching profile:', err);
 		return json(
@@ -31,4 +39,15 @@ export const GET: RequestHandler = async ({
 			{ status: 500 }
 		);
 	}
+};
+
+export const OPTIONS: RequestHandler = async () => {
+	return new Response(null, {
+		status: 204,
+		headers: {
+			'Access-Control-Allow-Origin': '*',
+			'Access-Control-Allow-Methods': 'GET, OPTIONS',
+			'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+		}
+	});
 };

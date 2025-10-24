@@ -4,12 +4,15 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Checkbox } from '$lib/components/ui/checkbox';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import { Label } from '$lib/components/ui/label';
 	import { Progress } from '$lib/components/ui/progress';
 	import * as Select from '$lib/components/ui/select';
 	import * as Table from '$lib/components/ui/table';
 	import type { Node } from '$lib/types/node';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import { diffJson } from 'diff';
+	import type { Change } from 'diff';
 
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -36,13 +39,36 @@
 	);
 
 	const showUnavailableColumn = $derived(nodes.some((n) => !n.isAvailable && n.unavailableMessage));
+	const selectableNodes = $derived(nodes.filter((n) => n.isAvailable && n.hasAuthority));
+	const hasUpdatedNodes = $derived(nodes.some((n) => n.hasUpdated));
+
+	let dialogOpen = $state(false);
+	let selectedNodeForDiff: Node | null = $state(null);
+	let diffs: Change[] = $state([]);
+
+	function openDiffDialog(node: Node) {
+		selectedNodeForDiff = node;
+		updateDiff(node);
+		dialogOpen = true;
+	}
+
+	function updateDiff(node: Node) {
+		try {
+			const before = JSON.parse(node.data);
+			const after = JSON.parse(node.updatedData ?? node.data);
+			diffs = diffJson(before, after);
+		} catch (error) {
+			console.error('Error updating diff:', error);
+			toast.error('Error updating diff. Please try again.');
+			diffs = [];
+		}
+	}
 
 	function toggleSelectAll() {
-		const selectable = nodes.filter((n) => n.isAvailable && n.hasAuthority);
-		if (selectedIds.length === selectable.length) {
+		if (selectedIds.length === selectableNodes.length) {
 			selectedIds = [];
 		} else {
-			selectedIds = selectable.map((n) => n.id);
+			selectedIds = selectableNodes.map((n) => n.id);
 		}
 	}
 
@@ -129,8 +155,9 @@
 						<Table.Head class="w-[40px]">
 							<Checkbox
 								checked={nodes.length > 0 &&
-									selectedIds.length ===
-										nodes.filter((r) => r.isAvailable && r.hasAuthority).length}
+									selectableNodes.length > 0 &&
+									selectedIds.length === selectableNodes.length}
+								disabled={selectableNodes.length === 0}
 								onCheckedChange={toggleSelectAll}
 							/>
 						</Table.Head>
@@ -143,6 +170,9 @@
 						<Table.Head>Availability</Table.Head>
 						{#if showUnavailableColumn}
 							<Table.Head>Unavailable Message</Table.Head>
+						{/if}
+						{#if hasUpdatedNodes}
+							<Table.Head>Actions</Table.Head>
 						{/if}
 					</Table.Row>
 				</Table.Header>
@@ -182,6 +212,15 @@
 								<Table.Cell class="text-red-600">
 									{#if !node.isAvailable && node.unavailableMessage}
 										{node.unavailableMessage}
+									{/if}
+								</Table.Cell>
+							{/if}
+							{#if hasUpdatedNodes}
+								<Table.Cell>
+									{#if node.updatedData}
+										<Button variant="outline" size="sm" onclick={() => openDiffDialog(node)}>
+											View Update
+										</Button>
 									{/if}
 								</Table.Cell>
 							{/if}
@@ -228,3 +267,68 @@
 		<p>Ignore = always hide node</p>
 	</div>
 </div>
+
+<Dialog.Root bind:open={dialogOpen}>
+	<Dialog.Content class="max-w-6xl max-h-[80vh] overflow-hidden">
+		<Dialog.Header>
+			<Dialog.Title>Profile Update Diff</Dialog.Title>
+			<Dialog.Description>
+				{#if selectedNodeForDiff}
+					Showing changes for: {JSON.parse(selectedNodeForDiff.data)?.name || 'N/A'}
+				{/if}
+			</Dialog.Description>
+		</Dialog.Header>
+
+		<div class="overflow-auto max-h-[60vh]">
+			<div class="grid grid-cols-2 gap-4">
+				<div class="space-y-2">
+					<h3 class="font-semibold">Before</h3>
+					<div class="border p-2 font-mono text-sm bg-gray-50 min-h-[200px] overflow-auto">
+						{#each diffs as part, index (index)}
+							{#if part.removed}
+								<div class="bg-red-50 text-red-700 whitespace-pre-wrap">
+									<span class="text-red-600 font-bold">- </span>{part.value}
+								</div>
+							{:else if part.added}
+								<div class="text-gray-400 whitespace-pre-wrap">
+									{part.value
+										.split('\n')
+										.map(() => '')
+										.join('\n')}
+								</div>
+							{:else}
+								<div class="whitespace-pre-wrap">
+									{part.value}
+								</div>
+							{/if}
+						{/each}
+					</div>
+				</div>
+
+				<div class="space-y-2">
+					<h3 class="font-semibold">After</h3>
+					<div class="border p-2 font-mono text-sm bg-gray-50 min-h-[200px] overflow-auto">
+						{#each diffs as part, index (index)}
+							{#if part.added}
+								<div class="bg-green-50 text-green-700 whitespace-pre-wrap">
+									<span class="text-green-600 font-bold">+ </span>{part.value}
+								</div>
+							{:else if part.removed}
+								<div class="text-gray-400 whitespace-pre-wrap">
+									{part.value
+										.split('\n')
+										.map(() => '')
+										.join('\n')}
+								</div>
+							{:else}
+								<div class="whitespace-pre-wrap">
+									{part.value}
+								</div>
+							{/if}
+						{/each}
+					</div>
+				</div>
+			</div>
+		</div>
+	</Dialog.Content>
+</Dialog.Root>

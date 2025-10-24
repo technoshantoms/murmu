@@ -4,6 +4,7 @@
 	import { createNode, deleteNode, updateNode, updateNodeStatus } from '$lib/api/nodes';
 	import { Button } from '$lib/components/ui/button';
 	import { Checkbox } from '$lib/components/ui/checkbox';
+	import * as Dialog from '$lib/components/ui/dialog';
 	import { Label } from '$lib/components/ui/label';
 	import { Progress } from '$lib/components/ui/progress';
 	import * as Select from '$lib/components/ui/select';
@@ -13,6 +14,8 @@
 	import { checkProfileAuthority, processProfile } from '$lib/utils/profile';
 	import { toCamelCase } from '$lib/utils/string-case';
 	import LoaderCircle from '@lucide/svelte/icons/loader-circle';
+	import { diffJson } from 'diff';
+	import type { Change } from 'diff';
 
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -32,6 +35,7 @@
 	let deletedProfiles = $state<Node[]>([]);
 	let unauthoritativeProfiles = $state<Node[]>([]);
 	let profileList = $state<Node[]>([]);
+	const selectableNodes = $derived(profileList.filter((n) => n.isAvailable && n.hasAuthority));
 
 	let selectedAction = $state('');
 
@@ -49,6 +53,28 @@
 	const showUnavailableColumn = $derived(
 		profileList.some((n) => !n.isAvailable && n.unavailableMessage)
 	);
+
+	let dialogOpen = $state(false);
+	let selectedNodeForDiff: Node | null = $state(null);
+	let diffs: Change[] = $state([]);
+
+	function openDiffDialog(node: Node) {
+		selectedNodeForDiff = node;
+		updateDiff(node);
+		dialogOpen = true;
+	}
+
+	function updateDiff(node: Node) {
+		try {
+			const before = JSON.parse(node.data);
+			const after = JSON.parse(node.updatedData ?? node.data);
+			diffs = diffJson(before, after);
+		} catch (error) {
+			console.error('Error updating diff:', error);
+			toast.error('Error updating diff. Please try again.');
+			diffs = [];
+		}
+	}
 
 	function toggleSelectAll() {
 		const selectable = profileList.filter((n) => n.isAvailable && n.hasAuthority);
@@ -214,7 +240,8 @@
 						status: existingNode.status,
 						isAvailable: is_available ? 1 : 0,
 						unavailableMessage: unavailable_message,
-						hasUpdated: true
+						hasUpdated: true,
+						hasAuthority: existingNode.hasAuthority
 					} as NodeUpdateInput);
 
 					profileList.push({ ...toCamelCase<Node>(updatedNode) });
@@ -262,17 +289,25 @@
 	async function checkAuthorityProfiles() {
 		const { data: authorityMap } = await getAuthorityMap(clusterUuid);
 
+		const updatedNodesIds = new Set(profileList.map((n) => n.id));
+
 		const progressStep = 33 / (existingNodes.length + profileList.length);
 		let currentProgress = 66;
 
 		for (const profile of existingNodes) {
 			currentProgress += progressStep;
 			loadingProgress = Math.min(100, Math.round(currentProgress));
+
+			if (updatedNodesIds.has(profile.id)) {
+				continue;
+			}
+
 			const originalAuthority = profile.hasAuthority ? 1 : 0;
 
+			const latestData = JSON.parse(profile.updatedData ?? profile.data);
 			const hasAuthority = checkProfileAuthority(
 				authorityMap ?? [],
-				JSON.parse(profile.data)?.primary_url,
+				latestData.primary_url,
 				profile.profileUrl
 			);
 
@@ -280,7 +315,7 @@
 				continue;
 			}
 
-			const profileUpdatedData: NodeUpdateInput = {
+			let profileUpdatedData: NodeUpdateInput = {
 				data: JSON.parse(profile.data),
 				updatedData: JSON.parse(profile.updatedData ?? 'null'),
 				status: profile.status,
@@ -293,6 +328,9 @@
 			if (originalAuthority === 1 && hasAuthority === 0) {
 				// If a profile has no domain authority, mark it as ignored
 				profileUpdatedData.status = 'ignore';
+
+				profileUpdatedData.data = JSON.parse(profile.updatedData ?? profile.data);
+				profileUpdatedData.updatedData = JSON.parse('null');
 
 				// If a profile is not in ignore state, and isAvailable is true, add it to the unauthoritativeProfiles
 				if (profile.status !== 'ignore' && profile.isAvailable === 1) {
@@ -309,9 +347,10 @@
 
 			const originalAuthority = profile.hasAuthority ? 1 : 0;
 
+			const latestData = JSON.parse(profile.updatedData ?? profile.data);
 			const hasAuthority = checkProfileAuthority(
 				authorityMap ?? [],
-				JSON.parse(profile.data)?.primary_url,
+				latestData.primary_url,
 				profile.profileUrl
 			);
 
@@ -319,7 +358,7 @@
 				continue;
 			}
 
-			const profileUpdatedData: NodeUpdateInput = {
+			let profileUpdatedData: NodeUpdateInput = {
 				data: JSON.parse(profile.data),
 				updatedData: JSON.parse(profile.updatedData ?? 'null'),
 				status: profile.status,
@@ -327,6 +366,22 @@
 				unavailableMessage: profile.unavailableMessage,
 				hasAuthority
 			};
+
+			// From AP to UAP
+			if (originalAuthority === 1 && hasAuthority === 0) {
+				// If a profile has no domain authority, mark it as ignored
+				profileUpdatedData.status = 'ignore';
+
+				profileUpdatedData.data = JSON.parse(profile.updatedData ?? profile.data);
+				profileUpdatedData.updatedData = JSON.parse('null');
+				profileUpdatedData.hasUpdated = false;
+
+				// If a profile is not in ignore state, and isAvailable is true, add it to the unauthoritativeProfiles
+				if (profile.status !== 'ignore' && profile.isAvailable === 1) {
+					unauthoritativeProfiles.push({ ...profile });
+					profileList = profileList.filter((n) => n.id !== profile.id);
+				}
+			}
 
 			await updateNode(clusterUuid, profile.id, profileUpdatedData);
 
@@ -446,8 +501,9 @@
 								<Table.Head class="w-[40px]">
 									<Checkbox
 										checked={profileList.length > 0 &&
-											selectedIds.length ===
-												profileList.filter((r) => r.isAvailable && r.hasAuthority).length}
+											selectableNodes.length > 0 &&
+											selectedIds.length === selectableNodes.length}
+										disabled={selectableNodes.length === 0}
 										onCheckedChange={toggleSelectAll}
 									/>
 								</Table.Head>
@@ -460,6 +516,7 @@
 								{#if showUnavailableColumn}
 									<Table.Head>Unavailable Message</Table.Head>
 								{/if}
+								<Table.Head>Actions</Table.Head>
 							</Table.Row>
 						</Table.Header>
 
@@ -495,6 +552,13 @@
 											{/if}
 										</Table.Cell>
 									{/if}
+									<Table.Cell>
+										{#if node.updatedData}
+											<Button variant="outline" size="sm" onclick={() => openDiffDialog(node)}>
+												View Update
+											</Button>
+										{/if}
+									</Table.Cell>
 								</Table.Row>
 							{/each}
 						</Table.Body>
@@ -540,3 +604,68 @@
 		{/if}
 	</div>
 </div>
+
+<Dialog.Root bind:open={dialogOpen}>
+	<Dialog.Content class="max-w-6xl max-h-[80vh] overflow-hidden">
+		<Dialog.Header>
+			<Dialog.Title>Profile Update Diff</Dialog.Title>
+			<Dialog.Description>
+				{#if selectedNodeForDiff}
+					Showing changes for: {JSON.parse(selectedNodeForDiff.data)?.name || 'N/A'}
+				{/if}
+			</Dialog.Description>
+		</Dialog.Header>
+
+		<div class="overflow-auto max-h-[60vh]">
+			<div class="grid grid-cols-2 gap-4">
+				<div class="space-y-2">
+					<h3 class="font-semibold">Before</h3>
+					<div class="border p-2 font-mono text-sm bg-gray-50 min-h-[200px] overflow-auto">
+						{#each diffs as part, index (index)}
+							{#if part.removed}
+								<div class="bg-red-50 text-red-700 whitespace-pre-wrap">
+									<span class="text-red-600 font-bold">- </span>{part.value}
+								</div>
+							{:else if part.added}
+								<div class="text-gray-400 whitespace-pre-wrap">
+									{part.value
+										.split('\n')
+										.map(() => '')
+										.join('\n')}
+								</div>
+							{:else}
+								<div class="whitespace-pre-wrap">
+									{part.value}
+								</div>
+							{/if}
+						{/each}
+					</div>
+				</div>
+
+				<div class="space-y-2">
+					<h3 class="font-semibold">After</h3>
+					<div class="border p-2 font-mono text-sm bg-gray-50 min-h-[200px] overflow-auto">
+						{#each diffs as part, index (index)}
+							{#if part.added}
+								<div class="bg-green-50 text-green-700 whitespace-pre-wrap">
+									<span class="text-green-600 font-bold">+ </span>{part.value}
+								</div>
+							{:else if part.removed}
+								<div class="text-gray-400 whitespace-pre-wrap">
+									{part.value
+										.split('\n')
+										.map(() => '')
+										.join('\n')}
+								</div>
+							{:else}
+								<div class="whitespace-pre-wrap">
+									{part.value}
+								</div>
+							{/if}
+						{/each}
+					</div>
+				</div>
+			</div>
+		</div>
+	</Dialog.Content>
+</Dialog.Root>

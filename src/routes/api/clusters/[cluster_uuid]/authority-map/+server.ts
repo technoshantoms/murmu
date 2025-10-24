@@ -1,6 +1,5 @@
 import { getDB } from '$lib/server/db';
 import { getNodes } from '$lib/server/models/node';
-import type { Node } from '$lib/types/node';
 import type { D1Database } from '@cloudflare/workers-types';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
@@ -18,24 +17,29 @@ export const GET: RequestHandler = async ({
 		}
 
 		const nodes = await getNodes(db, clusterUuid);
+		const authorityHosts = new Set<string>();
 
-		const primaryUrlMap: string[] = [];
+		for (const node of nodes) {
+			try {
+				const data = JSON.parse(node.data);
+				const primaryUrl = data.primary_url;
 
-		nodes.forEach((node: Node) => {
-			const profileUrl = node.profileUrl;
-			const data = JSON.parse(node.data);
-			const primaryUrl = data.primary_url ?? '';
+				if (!primaryUrl) continue;
 
-			// Parse URLs to get hostnames
-			const profileHost = new URL(profileUrl).hostname;
-			const primaryHost = primaryUrl ? new URL(primaryUrl).hostname : '';
+				const profileHost = new URL(node.profileUrl).hostname;
+				const primaryHost = new URL(primaryUrl).hostname;
 
-			if (profileHost && primaryHost && profileHost === primaryHost) {
-				primaryUrlMap.push(primaryHost);
+				if (profileHost === primaryHost) {
+					authorityHosts.add(primaryHost);
+				}
+			} catch (urlError) {
+				// Skip invalid URLs
+				console.warn(`Invalid URL in node ${node.id}:`, urlError);
+				continue;
 			}
-		});
+		}
 
-		return json({ data: primaryUrlMap, success: true }, { status: 200 });
+		return json({ data: Array.from(authorityHosts), success: true }, { status: 200 });
 	} catch (error) {
 		console.error('Error processing GET request:', error);
 		return json({ error: 'Internal Server Error', success: false }, { status: 500 });
