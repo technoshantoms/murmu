@@ -52,8 +52,8 @@ importers:
         specifier: ^3.10.0
         version: 3.10.0
       '@lucide/svelte':
-        specifier: ^0.515.0
-        version: 0.515.0(svelte@5.40.1)
+        specifier: ^0.547.0
+        version: 0.547.0(svelte@5.40.1)
       '@paralleldrive/cuid2':
         specifier: ^2.2.2
         version: 2.2.2
@@ -979,8 +979,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@lucide/svelte@0.515.0':
-    resolution: {integrity: sha512-CEAyqcZmNBfYzVgaRmK2RFJP5tnbXxekRyDk0XX/eZQRfsJmkDvmQwXNX8C869BgNeryzmrRyjHhUL6g9ZOHNA==}
+  '@lucide/svelte@0.547.0':
+    resolution: {integrity: sha512-VOlkC/L6cU9j5f7WEULyQ0yBJii0oGNZlflxdt8LK2hkRF/5DklYLfrrL4Kte+MvMencKPD6cFtLL7J1cDIN4w==}
     peerDependencies:
       svelte: ^5
 
@@ -3677,7 +3677,7 @@ snapshots:
   '@libsql/win32-x64-msvc@0.4.7':
     optional: true
 
-  '@lucide/svelte@0.515.0(svelte@5.40.1)':
+  '@lucide/svelte@0.547.0(svelte@5.40.1)':
     dependencies:
       svelte: 5.40.1
 
