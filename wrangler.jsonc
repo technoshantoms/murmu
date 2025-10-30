@@ -1,12 +1,12 @@
 {
 	"name": "murmurations-aggregator",
-	"compatibility_date": "2025-09-15",
+	"compatibility_date": "2025-10-30",
 	"compatibility_flags": ["nodejs_compat_v2"],
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "murmurations-aggregator-preview",
-			"database_id": "f11249b3-1819-4eb9-ab86-e06a44b16222",
+			"database_name": "acloud",
+			"database_id": "795592a2-4ccf-434f-84b9-247dabba82fd",
 			"migrations_dir": "drizzle"
 		}
 	],
@@ -15,8 +15,8 @@
 			"d1_databases": [
 				{
 					"binding": "DB",
-					"database_name": "murmurations-aggregator",
-					"database_id": "2453fcf5-60d9-4563-8eb4-adc04c9b9826",
+					"database_name": "acloud-prod",
+					"database_id": "f1b82bb4-5b9d-4dad-9cbe-8fefc4e8ea58",
 					"migrations_dir": "drizzle"
 				}
 			]
