@@ -202,6 +202,27 @@ export const roleCapabilities = sqliteTable('role_capabilities', {
 		.default(sql`(unixepoch())`)
 });
 
+export const jobs = sqliteTable('jobs', {
+	id: integer('id').primaryKey({ autoIncrement: true }),
+	jobUuid: text('job_uuid').notNull().unique(),
+	type: text('type').notNull(),
+	targetId: text('target_id').notNull(),
+	targetType: text('target_type').notNull(),
+	status: text('status').notNull().default('pending'),
+	totalNodes: integer('total_nodes').notNull().default(0),
+	processedNodes: integer('processed_nodes').notNull().default(0),
+	result: text('result'),
+	errorMessage: text('error_message'),
+	finishedAt: integer('finished_at', { mode: 'number' }),
+	retryCount: integer('retry_count').notNull().default(0),
+	createdAt: integer('created_at', { mode: 'number' })
+		.notNull()
+		.default(sql`(unixepoch())`),
+	updatedAt: integer('updated_at', { mode: 'number' })
+		.notNull()
+		.default(sql`(unixepoch())`)
+});
+
 // Relations
 export const clusterSchemasRelations = relations(clusterSchemas, ({ one }) => ({
 	cluster: one(clusters, {

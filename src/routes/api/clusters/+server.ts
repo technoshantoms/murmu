@@ -1,6 +1,8 @@
 import { getDB } from '$lib/server/db';
 import { createCluster, getClusters } from '$lib/server/models/cluster';
-import type { ClusterInsert, ClusterPublic } from '$lib/types/cluster';
+import { createJob } from '$lib/server/models/job';
+import type { ClusterInsert, ClusterPublic, ClusterWithJobUuid } from '$lib/types/cluster';
+import type { JobCreateInput } from '$lib/types/job';
 import { authenticateUcanRequest } from '$lib/utils/ucan-utils.server';
 import type { D1Database } from '@cloudflare/workers-types';
 import { json } from '@sveltejs/kit';
@@ -56,7 +58,30 @@ export const POST: RequestHandler = async ({
 		};
 
 		await createCluster(db, cluster);
-		return json({ data: cluster, success: true }, { status: 200 });
+
+		const jobUuid = crypto.randomUUID();
+		const job: JobCreateInput = {
+			jobUuid,
+			type: 'create-nodes',
+			targetId: cluster.clusterUuid,
+			targetType: 'clusters'
+		};
+
+		await createJob(db, job);
+
+		await platform.env.JOB_QUEUE.send({
+			job_uuid: job.jobUuid,
+			type: job.type,
+			target_id: job.targetId,
+			target_type: job.targetType
+		});
+
+		const clusterWithJobUuid: ClusterWithJobUuid = {
+			...cluster,
+			jobUuid
+		};
+
+		return json({ data: clusterWithJobUuid, success: true }, { status: 200 });
 	} catch (error) {
 		console.error('Error processing POST request:', error);
 		return json({ error: 'Internal Server Error', success: false }, { status: 500 });

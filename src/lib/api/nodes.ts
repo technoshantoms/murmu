@@ -75,6 +75,19 @@ export const updateNodeStatus = (
 		customFetch
 	);
 
+export const updateMultipleNodeStatus = (
+	clusterUuid: string,
+	nodeIds: number[],
+	status: string,
+	customFetch?: typeof fetch
+) =>
+	request<{ status: string; node_ids: number[] }, undefined>(
+		`/api/clusters/${clusterUuid}/nodes/status`,
+		'PUT',
+		{ status, node_ids: nodeIds },
+		customFetch
+	);
+
 export const deleteNode = (clusterUuid: string, nodeId: number, customFetch?: typeof fetch) =>
 	request<undefined, undefined>(
 		`/api/clusters/${clusterUuid}/nodes/${nodeId}`,

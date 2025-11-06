@@ -9,6 +9,7 @@ declare global {
 		interface Platform {
 			env: {
 				DB: D1Database;
+				JOB_QUEUE: Queue;
 			};
 			context: {
 				waitUntil(promise: Promise<unknown>): void;

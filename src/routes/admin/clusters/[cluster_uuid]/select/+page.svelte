@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { updateNodeStatus } from '$lib/api/nodes';
+	import { getJobByUuidAndTarget } from '$lib/api/job';
+	import { updateMultipleNodeStatus } from '$lib/api/nodes';
+	import { getNodes } from '$lib/api/nodes';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { Checkbox } from '$lib/components/ui/checkbox';
@@ -14,7 +16,7 @@
 	import { diffJson } from 'diff';
 	import type { Change } from 'diff';
 
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 
 	import type { PageProps } from './$types';
@@ -24,7 +26,100 @@
 	let nodes: Node[] = $state(data?.nodes ?? []);
 	let selectedIds: number[] = $state([]);
 	let isSubmitting = $state(false);
-	let loadingProgress = $state(0);
+
+	// Importing nodes
+	let isImporting = $state<boolean>(false);
+	let importProgress = $state<number>(0);
+	let importStatus = $state<'pending' | 'processing' | 'completed' | 'failed'>('pending');
+	let clusterUuid = $state<string | null>(data?.clusterUuid ?? null);
+	let jobUuid = $state<string | null>(null);
+	let importInterval: ReturnType<typeof setInterval> | null = null;
+
+	onMount(() => {
+		if (!clusterUuid) {
+			toast.error('Cluster not found.');
+			goto('/admin');
+			return;
+		}
+
+		const url = new URL(window.location.href);
+		jobUuid = url.searchParams.get('jobUuid');
+
+		if (jobUuid) {
+			isImporting = true;
+			startPolling();
+		}
+	});
+
+	onDestroy(() => {
+		if (importInterval) clearTimeout(importInterval);
+	});
+
+	function startPolling() {
+		if (importInterval) clearInterval(importInterval);
+
+		importInterval = setInterval(async () => {
+			try {
+				const { data: jobData, success } = await getJobByUuidAndTarget(
+					clusterUuid ?? '',
+					jobUuid ?? '',
+					fetch
+				);
+
+				if (!success || !jobData) throw new Error('Job not found');
+
+				if (jobData.totalNodes === 0) {
+					importProgress = 0;
+				} else {
+					importProgress = Math.min(
+						100,
+						Math.round((jobData.processedNodes / jobData.totalNodes) * 100)
+					);
+				}
+
+				importStatus = jobData.status as 'pending' | 'processing' | 'completed' | 'failed';
+
+				if (importStatus === 'completed') {
+					stopPolling();
+					await loadNodes();
+					isImporting = false;
+					toast.success('Cluster import completed.');
+				} else if (importStatus === 'failed') {
+					stopPolling();
+					isImporting = false;
+					toast.error(jobData.errorMessage ?? 'Import failed.');
+				}
+			} catch (err) {
+				console.error('Polling error:', err);
+				stopPolling();
+				isImporting = false;
+				toast.error('Failed to poll job status. Please try again.');
+			}
+		}, 2000);
+	}
+
+	function stopPolling() {
+		if (importInterval) {
+			clearInterval(importInterval);
+			importInterval = null;
+		}
+	}
+
+	async function loadNodes() {
+		if (!clusterUuid) {
+			toast.error('Cluster not found.');
+			goto('/admin');
+			return;
+		}
+
+		try {
+			const { data: newNodes } = await getNodes(clusterUuid, fetch);
+			nodes = newNodes ?? [];
+		} catch (err) {
+			console.error('Error loading nodes:', err);
+			toast.error('Failed to load nodes. Please try again.');
+		}
+	}
 
 	const actions = [
 		{ value: 'published', label: 'Publish' },
@@ -92,50 +187,35 @@
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 
 		isSubmitting = true;
-		loadingProgress = 0;
 
 		try {
-			const step = 100 / selectedIds.length;
-			for (let i = 0; i < selectedIds.length; i++) {
-				const { success, error } = await updateNodeStatus(
-					data?.clusterUuid,
-					selectedIds[i],
-					selectedAction
-				);
-
-				if (!success) {
-					toast.error(error ?? 'Failed to update node status');
-					return;
-				}
-
-				loadingProgress = Math.min(100, Math.round(step * (i + 1)));
+			const { success, error } = await updateMultipleNodeStatus(
+				clusterUuid ?? '',
+				selectedIds,
+				selectedAction
+			);
+			if (!success) {
+				toast.error(error ?? 'Failed to update multiple node statuses');
+				return;
 			}
 			toast.success('Node statuses updated successfully.');
-
 			await goto('/admin');
 		} catch (error) {
-			console.error('Error updating node statuses:', error);
-			toast.error('Failed to update node statuses. Please try again.');
+			console.error('Error updating multiple node statuses:', error);
+			toast.error('Failed to update multiple node statuses. Please try again.');
 		} finally {
 			isSubmitting = false;
 		}
 	}
-
-	onMount(() => {
-		if (data?.nodes === null) {
-			toast.error('Cluster not found. Please try again.');
-			goto('/admin');
-		}
-	});
 </script>
 
 <div class="container mx-auto py-4">
-	{#if isSubmitting}
+	{#if isImporting}
 		<div class="my-6">
 			<p class="mb-2 text-sm text-muted-foreground">
-				Updating nodes, please wait... {loadingProgress}%
+				Importing nodes... {importProgress}%
 			</p>
-			<Progress value={loadingProgress} max={100} class="w-full" />
+			<Progress value={importProgress} max={100} class="w-full" />
 		</div>
 	{/if}
 

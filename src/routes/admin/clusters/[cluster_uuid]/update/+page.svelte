@@ -181,7 +181,7 @@
 			throw new Error('Cluster last updated is not set');
 		}
 
-		const rawNodes = await fetchProfiles(indexUrl, queryUrl);
+		const { rawNodes } = await fetchProfiles(indexUrl, queryUrl);
 
 		const progressStep = 33 / rawNodes.length;
 		let currentProgress = 0;

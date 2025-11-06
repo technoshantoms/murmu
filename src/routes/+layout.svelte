@@ -471,14 +471,14 @@
 										<Select.Item
 											value={option.value}
 											label={option.label}
-											class="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-slate-100 dark:focus:bg-slate-800 data-[disabled]:pointer-events-none data-[disabled]:opacity-50"
+											class="relative flex w-full cursor-default select-none items-center rounded-sm py-1.5 pl-2 pr-8 text-sm outline-none focus:bg-slate-100 dark:focus:bg-slate-800 data-disabled:pointer-events-none data-disabled:opacity-50"
 										>
 											<div class="flex items-center justify-between w-full min-w-0 overflow-hidden">
 												<span class="truncate flex-1 mr-2">{option.label}</span>
 												{#if option.value !== 'original'}
 													{@const delegation = delegations.find((d) => d.from === option.value)}
 													{#if delegation}
-														<div class="flex items-center space-x-1 text-xs flex-shrink-0">
+														<div class="flex items-center space-x-1 text-xs shrink-0">
 															<Clock class="w-3 h-3" />
 															<span
 																class={isDelegationExpired(delegation)

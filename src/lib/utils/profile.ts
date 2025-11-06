@@ -56,8 +56,9 @@ export async function fetchProfiles(indexUrl: string, queryUrl: string) {
 
 	const data = await response.json();
 	const profiles = toCamelCase(data?.data ?? []);
+	const meta = data?.meta;
 
-	return profiles;
+	return { rawNodes: profiles, meta };
 }
 
 export function toCamelCase<T extends Record<string, unknown>>(obj: T): T {

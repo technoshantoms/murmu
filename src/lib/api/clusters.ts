@@ -3,7 +3,8 @@ import type {
 	Cluster,
 	ClusterCreateInput,
 	ClusterPublic,
-	ClusterUpdateInput
+	ClusterUpdateInput,
+	ClusterWithJobUuid
 } from '$lib/types/cluster';
 import type { DropdownField } from '$lib/types/enum-dropdown';
 
@@ -14,7 +15,7 @@ export const getCluster = (clusterUuid: string, customFetch?: typeof fetch) =>
 	request<undefined, ClusterPublic>(`/api/clusters/${clusterUuid}`, 'GET', undefined, customFetch);
 
 export const createCluster = (input: ClusterCreateInput, customFetch?: typeof fetch) =>
-	request<ClusterCreateInput, ClusterPublic>('/api/clusters', 'POST', input, customFetch);
+	request<ClusterCreateInput, ClusterWithJobUuid>('/api/clusters', 'POST', input, customFetch);
 
 export const updateCluster = (
 	clusterUuid: string,

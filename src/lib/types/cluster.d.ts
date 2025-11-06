@@ -17,3 +17,7 @@ export type ClusterDbUpdateInput = Pick<
 >;
 
 export type ClusterPublic = Omit<Cluster, 'id'>;
+
+export type ClusterWithJobUuid = ClusterInsert & {
+	jobUuid: string;
+};
