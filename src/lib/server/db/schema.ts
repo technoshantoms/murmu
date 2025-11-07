@@ -58,6 +58,10 @@ export const nodes = sqliteTable('nodes', {
 	data: text('data').notNull(),
 	updatedData: text('updated_data'),
 	hasUpdated: integer('has_updated').notNull().default(0),
+	lastUpdateJobUuid: text('last_update_job_uuid'),
+	lastUnavailableCheckJobUuid: text('last_unavailable_check_job_uuid'),
+	lastAuthorityChangeJobUuid: text('last_authority_change_job_uuid'),
+	isDeleted: integer('is_deleted').notNull().default(0)
 });
 
 // Table for users

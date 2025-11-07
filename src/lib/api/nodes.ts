@@ -1,4 +1,5 @@
 import { request } from '$lib/api/request';
+import type { ClusterWithJobUuid } from '$lib/types/cluster';
 import type { MapNode, Node, NodeCreateInput, NodeUpdateInput } from '$lib/types/node';
 
 export const createNode = (
@@ -85,6 +86,14 @@ export const updateMultipleNodeStatus = (
 		`/api/clusters/${clusterUuid}/nodes/status`,
 		'PUT',
 		{ status, node_ids: nodeIds },
+		customFetch
+	);
+
+export const updateNodes = (clusterUuid: string, customFetch?: typeof fetch) =>
+	request<undefined, ClusterWithJobUuid>(
+		`/api/clusters/${clusterUuid}/update-nodes`,
+		'POST',
+		undefined,
 		customFetch
 	);
 
