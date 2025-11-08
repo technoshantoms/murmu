@@ -43,7 +43,6 @@ VALUES
   ('api', '/clusters/*', 'clusters', 'DELETE'),
   ('api', '/clusters/*/nodes', 'clusters', 'POST'),
   ('api', '/clusters/*/nodes/*', 'clusters', 'PUT'),
-  ('api', '/clusters/*/nodes/*/status', 'clusters', 'PUT'),
   ('api', '/clusters/*/update-timestamp', 'clusters', 'PATCH'),
 
   ('api', '/emails', 'emails', 'GET'),

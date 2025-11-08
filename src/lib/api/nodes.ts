@@ -63,19 +63,6 @@ export const getPublishedNode = (clusterUuid: string, nodeId: string, customFetc
 		customFetch
 	);
 
-export const updateNodeStatus = (
-	clusterUuid: string,
-	nodeId: number,
-	status: string,
-	customFetch?: typeof fetch
-) =>
-	request<{ status: string }, Node>(
-		`/api/clusters/${clusterUuid}/nodes/${nodeId}/status`,
-		'PUT',
-		{ status },
-		customFetch
-	);
-
 export const updateMultipleNodeStatus = (
 	clusterUuid: string,
 	nodeIds: number[],
@@ -86,6 +73,17 @@ export const updateMultipleNodeStatus = (
 		`/api/clusters/${clusterUuid}/nodes/status`,
 		'PUT',
 		{ status, node_ids: nodeIds },
+		customFetch
+	);
+
+export const getUpdateNodes = (clusterUuid: string, jobUuid: string, customFetch?: typeof fetch) =>
+	request<
+		undefined,
+		{ profileList: Node[]; deletedProfiles: Node[]; unauthoritativeProfiles: Node[] }
+	>(
+		`/api/clusters/${clusterUuid}/update-nodes?${new URLSearchParams({ job_uuid: jobUuid }).toString()}`,
+		'GET',
+		undefined,
 		customFetch
 	);
 

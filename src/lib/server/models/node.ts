@@ -118,44 +118,52 @@ export async function createNode(db: DrizzleD1Database, node: NodeInsert): Promi
 	return result.results[0] as Node;
 }
 
-export async function updateNodeStatus(
-	db: DrizzleD1Database,
-	clusterUuid: string,
-	nodeId: number,
-	status: string,
-	updatedData: string | null,
-	moveUpdatedData: boolean = false
-): Promise<D1Result> {
-	if (moveUpdatedData) {
-		return await db
-			.update(nodes)
-			.set({ status, data: updatedData ?? '', updatedData: null, hasUpdated: false })
-			.where(and(eq(nodes.clusterUuid, clusterUuid), eq(nodes.id, nodeId)))
-			.run();
-	}
-
-	return await db
-		.update(nodes)
-		.set({ status })
-		.where(and(eq(nodes.clusterUuid, clusterUuid), eq(nodes.id, nodeId)))
-		.run();
-}
-
 export async function updateMultipleNodeStatus(
 	db: DrizzleD1Database,
 	clusterUuid: string,
 	nodeIds: number[],
 	status: string
-): Promise<D1Result> {
+): Promise<D1Result[]> {
 	if (!nodeIds || nodeIds.length === 0) {
 		throw new Error('nodeIds must be a non-empty array');
 	}
 
-	return await db
-		.update(nodes)
-		.set({ status })
+	const existingNodes = await db
+		.select()
+		.from(nodes)
 		.where(and(eq(nodes.clusterUuid, clusterUuid), inArray(nodes.id, nodeIds)))
-		.run();
+		.all();
+
+	if (existingNodes.length === 0) {
+		throw new Error('No nodes found');
+	}
+
+	const results: D1Result[] = [];
+
+	for (const node of existingNodes) {
+		let result;
+		if (node.hasUpdated) {
+			result = await db
+				.update(nodes)
+				.set({
+					status,
+					data: node.updatedData ?? '',
+					updatedData: null,
+					hasUpdated: 0
+				})
+				.where(and(eq(nodes.clusterUuid, clusterUuid), eq(nodes.id, node.id)))
+				.run();
+		} else {
+			result = await db
+				.update(nodes)
+				.set({ status })
+				.where(and(eq(nodes.clusterUuid, clusterUuid), eq(nodes.id, node.id)))
+				.run();
+		}
+		results.push(result);
+	}
+
+	return results;
 }
 
 export async function updateNode(
@@ -246,4 +254,69 @@ function buildSearchCondition(
 	}
 
 	return and(...conditions);
+}
+
+// Get Job Result
+export async function getProfileListFromJobResult(
+	db: DrizzleD1Database,
+	clusterUuid: string,
+	jobUuid: string
+) {
+	return await db
+		.select()
+		.from(nodes)
+		.where(
+			and(
+				eq(nodes.clusterUuid, clusterUuid),
+				eq(nodes.lastUpdateJobUuid, jobUuid),
+				eq(nodes.isDeleted, 0)
+			)
+		)
+		.all();
+}
+
+export async function getDeletedProfilesFromJobResult(
+	db: DrizzleD1Database,
+	clusterUuid: string,
+	jobUuid: string
+) {
+	return await db
+		.select()
+		.from(nodes)
+		.where(
+			and(
+				eq(nodes.clusterUuid, clusterUuid),
+				eq(nodes.lastUpdateJobUuid, jobUuid),
+				eq(nodes.isDeleted, 1)
+			)
+		)
+		.all();
+}
+
+export async function getUnauthoritativeProfilesFromJobResult(
+	db: DrizzleD1Database,
+	clusterUuid: string,
+	jobUuid: string
+) {
+	return await db
+		.select()
+		.from(nodes)
+		.where(
+			and(
+				eq(nodes.clusterUuid, clusterUuid),
+				eq(nodes.lastAuthorityChangeJobUuid, jobUuid),
+				eq(nodes.hasAuthority, 0)
+			)
+		)
+		.all();
+}
+
+export async function cleanDeletedNodes(
+	db: DrizzleD1Database,
+	clusterUuid: string
+): Promise<D1Result> {
+	return await db
+		.delete(nodes)
+		.where(and(eq(nodes.clusterUuid, clusterUuid), eq(nodes.isDeleted, 1)))
+		.run();
 }

@@ -43,9 +43,9 @@ export const PUT: RequestHandler = async ({
 			return json({ error: 'Missing status', success: false }, { status: 400 });
 		}
 
-		const result = await updateMultipleNodeStatus(db, clusterUuid, node_ids, status);
+		const results = await updateMultipleNodeStatus(db, clusterUuid, node_ids, status);
 
-		if (result?.meta?.changes === 0) {
+		if (results.length === 0) {
 			return json({ error: 'No nodes updated', success: false }, { status: 400 });
 		}
 

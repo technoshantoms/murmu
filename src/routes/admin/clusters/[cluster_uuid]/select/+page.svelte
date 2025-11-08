@@ -25,7 +25,7 @@
 
 	let nodes: Node[] = $state(data?.nodes ?? []);
 	let selectedIds: number[] = $state([]);
-	let isSubmitting = $state(false);
+	let isLoading = $state(false);
 
 	// Importing nodes
 	let isImporting = $state<boolean>(false);
@@ -186,7 +186,7 @@
 		// Scroll to the top of the page
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 
-		isSubmitting = true;
+		isLoading = true;
 
 		try {
 			const { success, error } = await updateMultipleNodeStatus(
@@ -204,7 +204,7 @@
 			console.error('Error updating multiple node statuses:', error);
 			toast.error('Failed to update multiple node statuses. Please try again.');
 		} finally {
-			isSubmitting = false;
+			isLoading = false;
 		}
 	}
 </script>
@@ -330,7 +330,7 @@
 			</Select.Root>
 		</div>
 
-		{#if isSubmitting}
+		{#if isLoading}
 			<Button disabled>
 				<LoaderCircle class="animate-spin" />
 				Please wait
