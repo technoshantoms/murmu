@@ -65,7 +65,7 @@ export async function verifyUcanWithCapabilities(
 	hierPart: string,
 	namespace: string,
 	segments: string[]
-) {
+): Promise<boolean> {
 	const rootIssuerDidKey = PUBLIC_SERVER_DID_KEY;
 
 	const result = await ucans.verify(encodedUcan, {
@@ -82,7 +82,7 @@ export async function verifyUcanWithCapabilities(
 	});
 
 	if (result.ok) {
-		return result.value;
+		return true;
 	} else {
 		console.log('verifyUcanWithCapabilities - Verification failed:', result?.error);
 		return false;
@@ -123,4 +123,19 @@ export async function decodeUcanToDelegation(encodedUcan: string): Promise<Deleg
 		token: encodedUcan,
 		expiresAt: ucan.payload.exp
 	};
+}
+
+export function checkAdminCapability(currentToken: string | null): boolean {
+	if (!currentToken) {
+		return false;
+	}
+
+	const payload = ucans.parse(currentToken);
+	const caps = payload.payload.att || [];
+
+	return caps.some((cap) => {
+		return (
+			cap.with?.scheme === 'page' && typeof cap.can === 'object' && cap.can.namespace === 'admin'
+		);
+	});
 }

@@ -1,5 +1,6 @@
 import { getDB } from '$lib/server/db';
-import { updateMultipleNodeStatus } from '$lib/server/models/node';
+import { createJob } from '$lib/server/models/job';
+import type { JobCreateInput } from '$lib/types/job';
 import { authenticateUcanRequest } from '$lib/utils/ucan-utils.server';
 import type { D1Database } from '@cloudflare/workers-types';
 import { json } from '@sveltejs/kit';
@@ -43,13 +44,25 @@ export const PUT: RequestHandler = async ({
 			return json({ error: 'Missing status', success: false }, { status: 400 });
 		}
 
-		const results = await updateMultipleNodeStatus(db, clusterUuid, node_ids, status);
+		const jobUuid = crypto.randomUUID();
+		const job: JobCreateInput = {
+			jobUuid,
+			type: 'update-node-statuses',
+			targetId: clusterUuid,
+			targetType: 'clusters',
+			payload: JSON.stringify({ node_ids, status })
+		};
 
-		if (results.length === 0) {
-			return json({ error: 'No nodes updated', success: false }, { status: 400 });
-		}
+		await createJob(db, job);
 
-		return json({ data: null, success: true }, { status: 200 });
+		await platform.env.JOB_QUEUE.send({
+			job_uuid: job.jobUuid,
+			type: job.type,
+			target_id: job.targetId,
+			target_type: job.targetType
+		});
+
+		return json({ data: { jobUuid }, success: true }, { status: 200 });
 	} catch (error) {
 		console.error('Error processing PUT request:', error);
 		return json({ error: 'Internal Server Error', success: false }, { status: 500 });

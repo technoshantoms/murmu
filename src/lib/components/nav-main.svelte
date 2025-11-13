@@ -5,7 +5,8 @@
 	import { ChevronRightIcon } from '@lucide/svelte';
 
 	let {
-		items
+		items,
+		groupLabel = undefined
 	}: {
 		items: {
 			title: string;
@@ -19,10 +20,14 @@
 				url: string;
 			}[];
 		}[];
+		groupLabel?: string;
 	} = $props();
 </script>
 
 <Sidebar.Group>
+	{#if groupLabel}
+		<Sidebar.GroupLabel>{groupLabel}</Sidebar.GroupLabel>
+	{/if}
 	<Sidebar.Menu>
 		{#each items as item (item.title)}
 			{#if item.items && item.items.length > 0}

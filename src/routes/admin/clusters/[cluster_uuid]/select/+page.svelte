@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { replaceState } from '$app/navigation';
 	import { getJobByUuidAndTarget } from '$lib/api/job';
-	import { updateMultipleNodeStatus } from '$lib/api/nodes';
+	import { updateNodeStatuses } from '$lib/api/nodes';
 	import { getNodes } from '$lib/api/nodes';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
@@ -25,10 +26,10 @@
 
 	let nodes: Node[] = $state(data?.nodes ?? []);
 	let selectedIds: number[] = $state([]);
-	let isLoading = $state(false);
 
 	// Importing nodes
-	let isImporting = $state<boolean>(false);
+	let isLoading = $state<boolean>(false);
+	let jobType: 'create-nodes' | 'update-node-statuses' | null = $state(null);
 	let importProgress = $state<number>(0);
 	let importStatus = $state<'pending' | 'processing' | 'completed' | 'failed'>('pending');
 	let clusterUuid = $state<string | null>(data?.clusterUuid ?? null);
@@ -46,17 +47,17 @@
 		jobUuid = url.searchParams.get('jobUuid');
 
 		if (jobUuid) {
-			isImporting = true;
 			startPolling();
 		}
 	});
 
 	onDestroy(() => {
-		if (importInterval) clearTimeout(importInterval);
+		if (importInterval) clearInterval(importInterval);
 	});
 
 	function startPolling() {
 		if (importInterval) clearInterval(importInterval);
+		isLoading = true;
 
 		importInterval = setInterval(async () => {
 			try {
@@ -78,27 +79,37 @@
 				}
 
 				importStatus = jobData.status as 'pending' | 'processing' | 'completed' | 'failed';
+				jobType = jobData.type as 'create-nodes' | 'update-node-statuses' | null;
 
 				if (importStatus === 'completed') {
 					stopPolling();
-					await loadNodes();
-					isImporting = false;
-					toast.success('Cluster import completed.');
+					if (jobData.type === 'create-nodes') {
+						await loadNodes();
+						toast.success('Cluster import completed.');
+					} else if (jobData.type === 'update-node-statuses') {
+						toast.success('Node statuses updated successfully.');
+						await goto('/admin');
+					}
 				} else if (importStatus === 'failed') {
 					stopPolling();
-					isImporting = false;
-					toast.error(jobData.errorMessage ?? 'Import failed.');
+					if (jobData.type === 'create-nodes') {
+						toast.error('Cluster import failed.');
+					} else if (jobData.type === 'update-node-statuses') {
+						toast.error('Node statuses update failed.');
+					}
 				}
 			} catch (err) {
 				console.error('Polling error:', err);
 				stopPolling();
-				isImporting = false;
 				toast.error('Failed to poll job status. Please try again.');
 			}
 		}, 2000);
 	}
 
 	function stopPolling() {
+		importProgress = 0;
+		isLoading = false;
+		jobType = null;
 		if (importInterval) {
 			clearInterval(importInterval);
 			importInterval = null;
@@ -189,31 +200,50 @@
 		isLoading = true;
 
 		try {
-			const { success, error } = await updateMultipleNodeStatus(
+			const { data, success, error } = await updateNodeStatuses(
 				clusterUuid ?? '',
 				selectedIds,
 				selectedAction
 			);
 			if (!success) {
-				toast.error(error ?? 'Failed to update multiple node statuses');
+				toast.error(error ?? 'Failed to update node statuses');
+				isLoading = false;
 				return;
 			}
-			toast.success('Node statuses updated successfully.');
-			await goto('/admin');
+
+			const newJobUuid = data?.jobUuid;
+			if (!newJobUuid) {
+				toast.error('Job UUID missing in response.');
+				isLoading = false;
+				return;
+			}
+
+			jobUuid = newJobUuid;
+
+			// Update the URL with the jobUuid
+			const url = new URL(window.location.href);
+			url.searchParams.set('jobUuid', newJobUuid);
+			replaceState(url.pathname + url.search, '');
+
+			startPolling();
 		} catch (error) {
-			console.error('Error updating multiple node statuses:', error);
-			toast.error('Failed to update multiple node statuses. Please try again.');
-		} finally {
+			console.error('Error updating node statuses:', error);
+			toast.error('Failed to update node statuses. Please try again.');
 			isLoading = false;
 		}
 	}
 </script>
 
 <div class="container mx-auto py-4">
-	{#if isImporting}
+	{#if isLoading}
 		<div class="my-6">
 			<p class="mb-2 text-sm text-muted-foreground">
-				Importing nodes... {importProgress}%
+				{jobType === null
+					? 'Loading job...'
+					: jobType === 'update-node-statuses'
+						? 'Updating node statuses...'
+						: 'Importing nodes...'}
+				{importProgress}%
 			</p>
 			<Progress value={importProgress} max={100} class="w-full" />
 		</div>

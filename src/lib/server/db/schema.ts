@@ -217,6 +217,7 @@ export const jobs = sqliteTable('jobs', {
 	processedNodes: integer('processed_nodes').notNull().default(0),
 	result: text('result'),
 	errorMessage: text('error_message'),
+	payload: text('payload'),
 	finishedAt: integer('finished_at', { mode: 'number' }),
 	retryCount: integer('retry_count').notNull().default(0),
 	createdAt: integer('created_at', { mode: 'number' })

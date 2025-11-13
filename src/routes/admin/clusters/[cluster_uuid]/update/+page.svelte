@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { replaceState } from '$app/navigation';
 	import { getJobByUuidAndTarget } from '$lib/api/job';
-	import { getUpdateNodes, updateMultipleNodeStatus, updateNodes } from '$lib/api/nodes';
+	import { getUpdateNodes, updateNodes, updateNodeStatuses } from '$lib/api/nodes';
 	import { Button } from '$lib/components/ui/button';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -28,6 +28,7 @@
 	let clusterUuid = $state<string | null>(data?.clusterUuid ?? null);
 	let isLoading = $state(false);
 	let loadingProgress = $state(0);
+	let jobType: 'update-nodes' | 'update-node-statuses' | null = $state(null);
 
 	let deletedProfiles = $state<Node[]>([]);
 	let unauthoritativeProfiles = $state<Node[]>([]);
@@ -101,24 +102,36 @@
 		// Scroll to the top of the page
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 
-		isLoading = true;
-
 		try {
-			const { success, error } = await updateMultipleNodeStatus(
+			const { data, success, error } = await updateNodeStatuses(
 				clusterUuid ?? '',
 				selectedIds,
 				selectedAction
 			);
 			if (!success) {
-				toast.error(error ?? 'Failed to update multiple node statuses');
+				toast.error(error ?? 'Failed to update node statuses');
+				isLoading = false;
 				return;
 			}
-			toast.success('Node statuses updated successfully.');
-			await goto('/admin');
+
+			const newJobUuid = data?.jobUuid;
+			if (!newJobUuid) {
+				toast.error('Job UUID missing in response.');
+				isLoading = false;
+				return;
+			}
+
+			jobUuid = newJobUuid;
+
+			// Update the URL with the jobUuid
+			const url = new URL(window.location.href);
+			url.searchParams.set('jobUuid', newJobUuid);
+			replaceState(url.pathname + url.search, '');
+
+			startUpdatePolling();
 		} catch (error) {
-			console.error('Error updating multiple node statuses:', error);
-			toast.error('Failed to update multiple node statuses. Please try again.');
-		} finally {
+			console.error('Error updating node statuses:', error);
+			toast.error('Failed to update node statuses. Please try again.');
 			isLoading = false;
 		}
 	}
@@ -129,8 +142,6 @@
 				toast.error('Cluster not found.');
 				return;
 			}
-
-			isLoading = true;
 
 			const { data, success, error } = await updateNodes(clusterUuid);
 			if (!success) {
@@ -160,6 +171,7 @@
 
 	function startUpdatePolling() {
 		if (updateInterval) clearInterval(updateInterval);
+		isLoading = true;
 
 		updateInterval = setInterval(async () => {
 			try {
@@ -181,45 +193,51 @@
 				}
 
 				updateStatus = jobData.status as 'pending' | 'processing' | 'completed' | 'failed';
+				jobType = jobData.type as 'update-nodes' | 'update-node-statuses' | null;
 
 				if (updateStatus === 'completed') {
 					stopUpdatePolling();
-					isLoading = false;
-					toast.success('Cluster update completed.');
-					const {
-						data: jobResult,
-						success,
-						error
-					} = await getUpdateNodes(clusterUuid ?? '', jobUuid ?? '', fetch);
-					if (!success) {
-						toast.error(error ?? 'Failed to get update nodes');
-						return;
-					}
-					profileList = jobResult?.profileList ?? [];
-					deletedProfiles = jobResult?.deletedProfiles ?? [];
-					unauthoritativeProfiles = jobResult?.unauthoritativeProfiles ?? [];
-
-					if (profileList.length === 0) {
-						toast.success('No updated profiles found.');
-						if (deletedProfiles.length === 0 && unauthoritativeProfiles.length === 0) {
-							await goto('/admin');
+					if (jobData.type === 'update-nodes') {
+						toast.success('Cluster update completed.');
+						const {
+							data: jobResult,
+							success,
+							error
+						} = await getUpdateNodes(clusterUuid ?? '', jobUuid ?? '', fetch);
+						if (!success) {
+							toast.error(error ?? 'Failed to get update nodes');
+							return;
 						}
+						profileList = jobResult?.profileList ?? [];
+						deletedProfiles = jobResult?.deletedProfiles ?? [];
+						unauthoritativeProfiles = jobResult?.unauthoritativeProfiles ?? [];
+
+						if (profileList.length === 0) {
+							toast.success('No updated profiles found.');
+							if (deletedProfiles.length === 0 && unauthoritativeProfiles.length === 0) {
+								await goto('/admin');
+							}
+						}
+					} else if (jobData.type === 'update-node-statuses') {
+						toast.success('Node statuses updated successfully.');
+						await goto('/admin');
 					}
 				} else if (updateStatus === 'failed') {
 					stopUpdatePolling();
-					isLoading = false;
 					toast.error(jobData.errorMessage ?? 'Cluster update failed.');
 				}
 			} catch (err) {
 				console.error('Polling error:', err);
 				stopUpdatePolling();
-				isLoading = false;
 				toast.error('Failed to poll update job status. Please try again.');
 			}
 		}, 2000);
 	}
 
 	function stopUpdatePolling() {
+		loadingProgress = 0;
+		isLoading = false;
+		jobType = null;
 		if (updateInterval) {
 			clearInterval(updateInterval);
 			updateInterval = null;
@@ -231,7 +249,6 @@
 		jobUuid = url.searchParams.get('jobUuid');
 
 		if (jobUuid) {
-			isLoading = true;
 			startUpdatePolling();
 		} else {
 			handleUpdate();
@@ -252,7 +269,11 @@
 		{#if isLoading}
 			<div class="my-6">
 				<p class="mb-2 text-sm text-muted-foreground">
-					{#if loadingProgress < 33}
+					{#if jobType === null}
+						Loading job...
+					{:else if jobType === 'update-node-statuses'}
+						Updating node statuses... {loadingProgress}%
+					{:else if loadingProgress < 33}
 						Checking for new and updated profiles... {loadingProgress}%
 					{:else if loadingProgress < 66}
 						Rechecking unavailable profiles... {loadingProgress}%

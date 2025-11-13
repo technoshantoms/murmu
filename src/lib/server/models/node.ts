@@ -2,7 +2,7 @@ import { nodes } from '$lib/server/db/schema';
 import type { NodeDbUpdateInput, NodeInsert } from '$lib/types/node';
 import type { Node } from '$lib/types/node';
 import type { D1Result } from '@cloudflare/workers-types';
-import { and, count, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, eq, sql } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 
 export async function getNodes(db: DrizzleD1Database, clusterUuid: string) {
@@ -116,54 +116,6 @@ export async function getDistinctLinkedSchemas(
 export async function createNode(db: DrizzleD1Database, node: NodeInsert): Promise<Node> {
 	const result = await db.insert(nodes).values(node).returning().run();
 	return result.results[0] as Node;
-}
-
-export async function updateMultipleNodeStatus(
-	db: DrizzleD1Database,
-	clusterUuid: string,
-	nodeIds: number[],
-	status: string
-): Promise<D1Result[]> {
-	if (!nodeIds || nodeIds.length === 0) {
-		throw new Error('nodeIds must be a non-empty array');
-	}
-
-	const existingNodes = await db
-		.select()
-		.from(nodes)
-		.where(and(eq(nodes.clusterUuid, clusterUuid), inArray(nodes.id, nodeIds)))
-		.all();
-
-	if (existingNodes.length === 0) {
-		throw new Error('No nodes found');
-	}
-
-	const results: D1Result[] = [];
-
-	for (const node of existingNodes) {
-		let result;
-		if (node.hasUpdated) {
-			result = await db
-				.update(nodes)
-				.set({
-					status,
-					data: node.updatedData ?? '',
-					updatedData: null,
-					hasUpdated: 0
-				})
-				.where(and(eq(nodes.clusterUuid, clusterUuid), eq(nodes.id, node.id)))
-				.run();
-		} else {
-			result = await db
-				.update(nodes)
-				.set({ status })
-				.where(and(eq(nodes.clusterUuid, clusterUuid), eq(nodes.id, node.id)))
-				.run();
-		}
-		results.push(result);
-	}
-
-	return results;
 }
 
 export async function updateNode(

@@ -28,7 +28,7 @@
 		isUcanExpired,
 		verifyUcanWithCapabilities
 	} from '$lib/utils/ucan-utils';
-	import { AlertCircle, Clock, User, WifiOff } from '@lucide/svelte';
+	import { CircleAlert, Clock, User, WifiOff } from '@lucide/svelte';
 
 	import { onMount } from 'svelte';
 
@@ -41,7 +41,6 @@
 	let isReady: boolean = $state(true);
 
 	const siteName = 'MurmurMaps';
-	const isAdminRoute = $derived(page.url.pathname.startsWith('/admin'));
 
 	// Define routes that do not require DB status check
 	const routesWithDbCheck = ['/profile-generator', '/batch-importer'];
@@ -256,8 +255,10 @@
 		if (!nav.to) return;
 		if (nav.to.url.pathname === page.url.pathname) return;
 
+		isReady = false;
 		const keypair = await getOrCreateKeyPair();
 		await verifyAccessIfNeeded(keypair, nav.to?.url.pathname ?? '');
+		isReady = true;
 	});
 
 	async function refreshTokenIfNeeded(keypair: CryptoKeyPair) {
@@ -299,11 +300,9 @@
 		const scheme = 'page';
 		let hierPart = currentPath;
 		let namespace = 'client';
-		let isAdminRoute = false;
 
 		let pathToCheck = currentPath;
 		if (currentPath.includes('/admin')) {
-			isAdminRoute = true;
 			namespace = 'admin';
 			hierPart = currentPath.replace('/admin', '') || '/';
 			pathToCheck = currentPath.replace(/^\/admin/, '') || '/';
@@ -330,7 +329,7 @@
 		}
 
 		if (!isVerified) {
-			goto(isAdminRoute ? '/admin/no-access' : '/no-access');
+			goto('/no-access');
 			return;
 		}
 	}
@@ -503,7 +502,7 @@
 			</div>
 		{/if}
 
-		{#if !isAdminRoute && showMenubar}
+		{#if showMenubar}
 			<!-- Status Alerts - Position below delegation bar -->
 			{#if !isOnline}
 				<div class="bg-red-500 border-b border-red-600 text-white shadow-lg">
@@ -523,7 +522,7 @@
 				>
 					<div class="container mx-auto px-4 py-3">
 						<div class="flex items-center justify-center space-x-2">
-							<AlertCircle class="w-5 h-5 text-amber-600 dark:text-amber-400" />
+							<CircleAlert class="w-5 h-5 text-amber-600 dark:text-amber-400" />
 							<span class="font-medium">Database Connection Issue</span>
 							<span class="text-amber-700 dark:text-amber-300"
 								>Unable to connect to the database, please try again in a few minutes</span
