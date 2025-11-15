@@ -43,7 +43,7 @@
 	</Alert>
 {/if}
 
-<div class="container mx-auto py-4">
+<div class="container mx-auto p-4">
 	<div class="mb-6">
 		{#if !currentToken}
 			<Alert
@@ -122,27 +122,45 @@
 				<div
 					class="rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900"
 				>
-					<h2 class="mb-3 text-lg font-semibold text-slate-900 dark:text-slate-50">
-						{cluster.name}
-					</h2>
+					<div class="flex h-full flex-col">
+						<div class="mb-4 space-y-1">
+							<h2 class="text-lg font-semibold text-slate-900 dark:text-slate-50">
+								{cluster.name}
+							</h2>
 
-					<p class="mb-4 text-sm text-slate-500 dark:text-slate-400">
-						Last updated: {formatDate(cluster.lastUpdated)}
-					</p>
+							{#if cluster.description}
+								<div class="text-slate-700 dark:text-slate-300">
+									{cluster.description}
+								</div>
+							{/if}
 
-					<div class="flex gap-2">
-						<a
-							href="/clusters/{cluster.clusterUuid}/list"
-							class="flex-1 rounded-md bg-slate-900 px-3 py-2 text-center text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-200"
-						>
-							Directory
-						</a>
-						<a
-							href="/clusters/{cluster.clusterUuid}/map"
-							class="flex-1 rounded-md bg-slate-900 px-3 py-2 text-center text-sm font-medium text-white hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-200"
-						>
-							Map
-						</a>
+							<p class="text-sm text-slate-500 dark:text-slate-400">
+								Last updated: {formatDate(cluster.lastUpdated)}
+							</p>
+						</div>
+
+						<div class="mt-auto flex gap-2">
+							<a
+								href="/clusters/{cluster.clusterUuid}/list"
+								class="flex-1 inline-flex items-center justify-center rounded-md
+								 bg-slate-900 text-white px-3 py-2 text-sm font-medium
+								 hover:bg-slate-800 dark:bg-slate-50 dark:text-slate-900 dark:hover:bg-slate-200
+								 transition"
+							>
+								Directory
+							</a>
+
+							<a
+								href="/clusters/{cluster.clusterUuid}/map"
+								class="flex-1 inline-flex items-center justify-center rounded-md border
+								 border-slate-300 bg-white text-slate-700 px-3 py-2 text-sm font-medium
+								 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900
+								 dark:text-slate-200 dark:hover:bg-slate-800
+								 transition"
+							>
+								Map
+							</a>
+						</div>
 					</div>
 				</div>
 			{/each}

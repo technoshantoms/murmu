@@ -31,6 +31,7 @@
 	const countryOptions = $state(data?.countries ?? []);
 
 	let clusterName = $state('');
+	let clusterDescription = $state('');
 	let clusterCenterLatitude = $state(0);
 	let clusterCenterLongitude = $state(0);
 	let clusterScale = $state(5);
@@ -83,10 +84,13 @@
 			const { data: schemas } = await getSchemas(`${libraryURL}/schemas`);
 			schemaOptions.length = 0;
 			schemaOptions.push(
-				...schemas.map((schema: { name: string }) => ({
-					value: schema.name,
-					label: schema.name
-				}))
+				...schemas
+					.filter((schema: { name: string }) => !schema.name.startsWith('test_'))
+					.map((schema: { name: string }) => ({
+						value: schema.name,
+						label: schema.name
+					}))
+					.sort((a, b) => a.label.localeCompare(b.label))
 			);
 			schema = schemaOptions[0]?.value ?? '';
 		} catch (error) {
@@ -150,6 +154,7 @@
 
 			const clusterData: ClusterCreateInput = {
 				name: clusterName,
+				description: clusterDescription,
 				indexUrl: sourceIndex,
 				queryUrl: `?${queryString}`,
 				centerLat: clusterCenterLatitude,
@@ -211,7 +216,7 @@
 	}
 </script>
 
-<div class="container mx-auto py-4">
+<div class="container mx-auto p-4">
 	<h2 class="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-50">
 		Create a Cluster or Directory
 	</h2>
@@ -239,6 +244,19 @@
 						/>
 						<p class="text-sm text-muted-foreground">
 							A familiar name to make it easy for you to identify
+						</p>
+					</div>
+					<div class="grid gap-2">
+						<Label for="cluster-description">Cluster Description</Label>
+						<Input
+							type="text"
+							id="cluster-description"
+							bind:value={clusterDescription}
+							class="w-full"
+							placeholder="Enter cluster name"
+						/>
+						<p class="text-sm text-muted-foreground">
+							A description to help others understand the purpose of the cluster
 						</p>
 					</div>
 				</div>

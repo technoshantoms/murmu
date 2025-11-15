@@ -4,7 +4,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { isValidEmail } from '$lib/utils/validators';
-	import { AlertCircle, CheckCircle } from '@lucide/svelte';
+	import { CircleAlert, CircleCheck } from '@lucide/svelte';
 
 	let email = $state('');
 	let validEmail = $derived(isValidEmail(email));
@@ -41,14 +41,14 @@
 
 {#if successMessage}
 	<Alert variant="default" class="mb-4">
-		<CheckCircle class="size-4" />
+		<CircleCheck class="size-4" />
 		<AlertTitle>Success</AlertTitle>
 		<AlertDescription>{successMessage}</AlertDescription>
 	</Alert>
 {/if}
 {#if errorMessage}
 	<Alert variant="destructive" class="mb-4">
-		<AlertCircle class="size-4" />
+		<CircleAlert class="size-4" />
 		<AlertTitle>Error</AlertTitle>
 		<AlertDescription>{errorMessage}</AlertDescription>
 	</Alert>

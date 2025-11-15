@@ -29,10 +29,13 @@ export const load: PageLoad = async ({ fetch }) => {
 	// Get the schema for the source index
 	const { data: allSchemas } = await getSchemas(`${defaultSourceIndex?.libraryUrl}/schemas`, fetch);
 
-	const schemas = allSchemas.map(({ name }) => ({
-		value: name,
-		label: name
-	}));
+	const schemas = allSchemas
+		.filter((schema: { name: string }) => !schema.name.startsWith('test_'))
+		.map(({ name }) => ({
+			value: name,
+			label: name
+		}))
+		.sort((a, b) => a.label.localeCompare(b.label));
 
 	return {
 		title: 'Create a Cluster',

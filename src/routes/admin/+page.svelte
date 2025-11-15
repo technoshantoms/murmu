@@ -42,7 +42,7 @@
 	}
 </script>
 
-<div class="container mx-auto py-4">
+<div class="container mx-auto p-4">
 	{#if typedPage?.state?.message}
 		<Alert class="mb-6">
 			<CircleAlert class="size-4" />
@@ -89,9 +89,17 @@
 			<div
 				class="mb-8 rounded-lg border border-slate-200 bg-white p-6 shadow-xs dark:border-slate-800 dark:bg-slate-900"
 			>
-				<h2 class="mb-4 text-xl font-semibold text-slate-900 dark:text-slate-50">
-					{cluster.name}
-				</h2>
+				<div class="mb-4">
+					<h2 class="text-xl font-semibold text-slate-900 dark:text-slate-50">
+						{cluster.name}
+					</h2>
+
+					{#if cluster.description}
+						<div class="text-slate-700 dark:text-slate-300">
+							{cluster.description}
+						</div>
+					{/if}
+				</div>
 
 				<div class="mb-6 space-y-3">
 					<div class="grid grid-cols-1 gap-2 md:grid-cols-4">

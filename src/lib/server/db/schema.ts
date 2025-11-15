@@ -5,6 +5,7 @@ export const clusters = sqliteTable('clusters', {
 	id: integer('id').primaryKey().notNull(),
 	clusterUuid: text('cluster_uuid').notNull().unique(),
 	name: text('name').notNull(),
+	description: text('description'),
 	indexUrl: text('index_url').notNull(),
 	queryUrl: text('query_url').notNull(),
 	centerLat: real('center_lat').default(46.603354).notNull(),

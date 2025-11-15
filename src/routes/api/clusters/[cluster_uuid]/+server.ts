@@ -65,10 +65,11 @@ export const PUT: RequestHandler = async ({
 			return json({ error: 'Cluster not found', success: false }, { status: 404 });
 		}
 
-		const { name, centerLat, centerLon, scale } = await request.json();
+		const { name, description, centerLat, centerLon, scale } = await request.json();
 
 		const updatedCluster: ClusterDbUpdateInput = {
 			name,
+			description,
 			centerLat,
 			centerLon,
 			scale,

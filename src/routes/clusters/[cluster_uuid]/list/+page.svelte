@@ -11,7 +11,7 @@
 	import type { ClusterPublic } from '$lib/types/cluster';
 	import type { DropdownField } from '$lib/types/enum-dropdown';
 	import type { Node } from '$lib/types/node';
-	import { AlertCircle, ArrowLeft, Database, Search, Tag } from '@lucide/svelte';
+	import { ArrowLeft, CircleAlert, Database, Search, Tag } from '@lucide/svelte';
 	import ChevronLeftIcon from '@lucide/svelte/icons/chevron-left';
 	import ChevronRightIcon from '@lucide/svelte/icons/chevron-right';
 	import type { JSONSchema7 } from 'json-schema';
@@ -120,11 +120,11 @@
 	}
 </script>
 
-<div class="container mx-auto py-4">
+<div class="container mx-auto p-4">
 	{#if !cluster}
 		<div class="flex h-32 items-center justify-center">
 			<div class="text-center space-y-2">
-				<AlertCircle class="h-8 w-8 text-muted-foreground mx-auto" />
+				<CircleAlert class="h-8 w-8 text-muted-foreground mx-auto" />
 				<h3 class="text-lg font-semibold">Cluster Not Found</h3>
 				<p class="text-sm text-muted-foreground">The requested cluster could not be loaded.</p>
 			</div>

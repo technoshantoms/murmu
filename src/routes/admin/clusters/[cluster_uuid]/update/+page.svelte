@@ -365,10 +365,13 @@
 			<h2 class="mb-4 text-xl font-semibold">Updated Profiles</h2>
 			<div class="overflow-hidden rounded-md border">
 				<div class="overflow-x-auto">
-					<Table.Root>
+					<Table.Root
+						class="table-auto w-max md:table-fixed md:w-full
+             [&_th]:whitespace-normal [&_td]:whitespace-normal [&_td]:wrap-break-word"
+					>
 						<Table.Header>
 							<Table.Row>
-								<Table.Head class="w-[40px]">
+								<Table.Head class="md:w-[4%]">
 									<Checkbox
 										checked={profileList.length > 0 &&
 											selectableNodes.length > 0 &&
@@ -377,16 +380,17 @@
 										onCheckedChange={toggleSelectAll}
 									/>
 								</Table.Head>
-								<Table.Head class="w-[40px]">ID</Table.Head>
-								<Table.Head class="w-[40px]">📍</Table.Head>
-								<Table.Head>Name / Title</Table.Head>
-								<Table.Head>Profile URL</Table.Head>
-								<Table.Head>Status</Table.Head>
-								<Table.Head>Availability</Table.Head>
+								<Table.Head class="md:w-[4%]">ID</Table.Head>
+								<Table.Head class="md:w-[6%]">Geo Data</Table.Head>
+								<Table.Head class="md:w-[15%]">Name / Title</Table.Head>
+								<Table.Head class="md:w-[15%]">Primary URL</Table.Head>
+								<Table.Head class="md:w-[24%]">Profile URL</Table.Head>
+								<Table.Head class="md:w-[8%]">Status</Table.Head>
+								<Table.Head class="md:w-[8%]">Availability</Table.Head>
 								{#if showUnavailableColumn}
-									<Table.Head>Unavailable Message</Table.Head>
+									<Table.Head class="md:w-[8%]">Unavailable Message</Table.Head>
 								{/if}
-								<Table.Head>Actions</Table.Head>
+								<Table.Head class="md:w-[8%]">Actions</Table.Head>
 							</Table.Row>
 						</Table.Header>
 
@@ -403,6 +407,7 @@
 									<Table.Cell>{node.id}</Table.Cell>
 									<Table.Cell>{JSON.parse(node.data)?.geolocation ? '📍' : ''}</Table.Cell>
 									<Table.Cell>{JSON.parse(node.data)?.name || 'N/A'}</Table.Cell>
+									<Table.Cell>{JSON.parse(node.data)?.primary_url || 'N/A'}</Table.Cell>
 									<Table.Cell>
 										<a
 											href={node.profileUrl}

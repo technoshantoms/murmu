@@ -8,7 +8,7 @@
 	import { Map, MarkerCluster, TileLayer } from '$lib/svelte-leaflet';
 	import type { DropdownField } from '$lib/types/enum-dropdown';
 	import type { MapNode } from '$lib/types/node';
-	import { AlertCircle, Search, Tag } from '@lucide/svelte';
+	import { CircleAlert, Search, Tag } from '@lucide/svelte';
 	import L, { MarkerClusterGroup } from 'leaflet';
 
 	import { untrack } from 'svelte';
@@ -211,7 +211,7 @@
 			<Card class="shadow-lg">
 				<CardContent class="p-6">
 					<div class="text-center space-y-2">
-						<AlertCircle class="h-6 w-6 text-muted-foreground mx-auto" />
+						<CircleAlert class="h-6 w-6 text-muted-foreground mx-auto" />
 						<p class="text-sm text-muted-foreground">
 							{nameSearch.trim() || tagSearch.trim() || hasActiveFilters()
 								? 'No results found.'

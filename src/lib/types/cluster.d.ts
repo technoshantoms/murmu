@@ -13,7 +13,7 @@ export type ClusterUpdateInput = Pick<Cluster, 'name' | 'centerLat' | 'centerLon
 
 export type ClusterDbUpdateInput = Pick<
 	Cluster,
-	'name' | 'centerLat' | 'centerLon' | 'scale' | 'updatedAt'
+	'name' | 'description' | 'centerLat' | 'centerLon' | 'scale' | 'updatedAt'
 >;
 
 export type ClusterPublic = Omit<Cluster, 'id'>;

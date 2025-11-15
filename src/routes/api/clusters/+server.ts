@@ -41,7 +41,7 @@ export const POST: RequestHandler = async ({
 		}
 
 		const body = await request.json();
-		const { name, indexUrl, queryUrl, centerLat, centerLon, scale } = body;
+		const { name, description, indexUrl, queryUrl, centerLat, centerLon, scale } = body;
 
 		if (!name || !indexUrl || !queryUrl) {
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
@@ -50,6 +50,7 @@ export const POST: RequestHandler = async ({
 		const cluster: ClusterInsert = {
 			clusterUuid: crypto.randomUUID(),
 			name,
+			description,
 			indexUrl,
 			queryUrl,
 			centerLat,

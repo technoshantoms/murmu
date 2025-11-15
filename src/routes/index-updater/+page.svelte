@@ -3,7 +3,7 @@
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
-	import { AlertCircle, CheckCircle } from '@lucide/svelte';
+	import { CircleAlert, CircleCheck } from '@lucide/svelte';
 
 	let postProfileUrl = $state('');
 	let checkProfileUrl = $state('');
@@ -69,7 +69,7 @@
 	}
 </script>
 
-<div class="container mx-auto py-4">
+<div class="container mx-auto p-4">
 	<div class="mb-4 sm:flex sm:items-center">
 		<div class="text-gray-900 sm:flex-auto dark:text-gray-50">
 			<h1 class="text-2xl font-bold mb-2">Index Updater</h1>
@@ -107,10 +107,10 @@
 				<div class="mt-4">
 					<Alert.Root variant={postResponseOk ? 'default' : 'destructive'}>
 						{#if postResponseOk}
-							<CheckCircle class="h-4 w-4" />
+							<CircleCheck class="h-4 w-4" />
 							<Alert.Title>Success</Alert.Title>
 						{:else}
-							<AlertCircle class="h-4 w-4" />
+							<CircleAlert class="h-4 w-4" />
 							<Alert.Title>Error</Alert.Title>
 						{/if}
 						<Alert.Description>
@@ -154,10 +154,10 @@
 				<div class="mt-4">
 					<Alert.Root variant={statusResponseOk ? 'default' : 'destructive'}>
 						{#if statusResponseOk}
-							<CheckCircle class="h-4 w-4" />
+							<CircleCheck class="h-4 w-4" />
 							<Alert.Title>Success</Alert.Title>
 						{:else}
-							<AlertCircle class="h-4 w-4" />
+							<CircleAlert class="h-4 w-4" />
 							<Alert.Title>Error</Alert.Title>
 						{/if}
 						<Alert.Description>
@@ -204,10 +204,10 @@
 				<div class="mt-4">
 					<Alert.Root variant={deleteResponseOk ? 'default' : 'destructive'}>
 						{#if deleteResponseOk}
-							<CheckCircle class="h-4 w-4" />
+							<CircleCheck class="h-4 w-4" />
 							<Alert.Title>Success</Alert.Title>
 						{:else}
-							<AlertCircle class="h-4 w-4" />
+							<CircleAlert class="h-4 w-4" />
 							<Alert.Title>Error</Alert.Title>
 						{/if}
 						<Alert.Description>

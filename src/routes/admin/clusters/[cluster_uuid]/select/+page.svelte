@@ -234,7 +234,7 @@
 	}
 </script>
 
-<div class="container mx-auto py-4">
+<div class="container mx-auto p-4">
 	{#if isLoading}
 		<div class="my-6">
 			<p class="mb-2 text-sm text-muted-foreground">
@@ -259,10 +259,13 @@
 
 	<div class="overflow-hidden rounded-md border">
 		<div class="overflow-x-auto">
-			<Table.Root>
+			<Table.Root
+				class="table-auto w-max md:table-fixed md:w-full
+             [&_th]:whitespace-normal [&_td]:whitespace-normal [&_td]:wrap-break-word"
+			>
 				<Table.Header>
 					<Table.Row>
-						<Table.Head class="w-[40px]">
+						<Table.Head class="md:w-[4%]">
 							<Checkbox
 								checked={nodes.length > 0 &&
 									selectableNodes.length > 0 &&
@@ -271,18 +274,18 @@
 								onCheckedChange={toggleSelectAll}
 							/>
 						</Table.Head>
-						<Table.Head class="w-[40px]">ID</Table.Head>
-						<Table.Head class="w-[40px]">📍</Table.Head>
-						<Table.Head>Name / Title</Table.Head>
-						<Table.Head>Primary URL</Table.Head>
-						<Table.Head>Profile URL</Table.Head>
-						<Table.Head>Status</Table.Head>
-						<Table.Head>Availability</Table.Head>
+						<Table.Head class="md:w-[4%]">ID</Table.Head>
+						<Table.Head class="md:w-[6%]">Geo Data</Table.Head>
+						<Table.Head class="md:w-[15%]">Name / Title</Table.Head>
+						<Table.Head class="md:w-[15%]">Primary URL</Table.Head>
+						<Table.Head class="md:w-[24%]">Profile URL</Table.Head>
+						<Table.Head class="md:w-[8%]">Status</Table.Head>
+						<Table.Head class="md:w-[8%]">Availability</Table.Head>
 						{#if showUnavailableColumn}
-							<Table.Head>Unavailable Message</Table.Head>
+							<Table.Head class="md:w-[8%]">Unavailable Message</Table.Head>
 						{/if}
 						{#if hasUpdatedNodes}
-							<Table.Head>Actions</Table.Head>
+							<Table.Head class="md:w-[8%]">Actions</Table.Head>
 						{/if}
 					</Table.Row>
 				</Table.Header>

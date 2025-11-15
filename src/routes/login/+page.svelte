@@ -12,7 +12,7 @@
 	} from '$lib/components/ui/card';
 	import { getKey, removeDidPrefix } from '$lib/crypto';
 	import { toDidableKey } from '$lib/utils/ucan-utils';
-	import { AlertCircle, Home } from '@lucide/svelte';
+	import { CircleAlert, Home } from '@lucide/svelte';
 
 	import { onMount } from 'svelte';
 
@@ -74,7 +74,7 @@
 		<CardContent class="space-y-4">
 			{#if errorMessage}
 				<Alert variant="destructive">
-					<AlertCircle class="h-4 w-4" />
+					<CircleAlert class="h-4 w-4" />
 					<AlertDescription>
 						{errorMessage}
 					</AlertDescription>

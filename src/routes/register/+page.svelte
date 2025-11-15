@@ -13,7 +13,7 @@
 	import { currentTokenStore } from '$lib/stores/token-store';
 	import type { CryptoKeyPair } from '$lib/types/crypto';
 	import { issueAccessUcan } from '$lib/utils/ucan-utils';
-	import { AlertCircle } from '@lucide/svelte';
+	import { CircleAlert } from '@lucide/svelte';
 
 	import { onMount } from 'svelte';
 
@@ -80,7 +80,7 @@
 		<CardContent class="space-y-4">
 			{#if form?.error || error}
 				<Alert variant="destructive">
-					<AlertCircle class="h-4 w-4" />
+					<CircleAlert class="h-4 w-4" />
 					<AlertDescription>
 						{form?.error || error}
 					</AlertDescription>

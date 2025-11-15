@@ -4,7 +4,7 @@
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import type { ClusterPublic } from '$lib/types/cluster';
 	import type { Node } from '$lib/types/node';
-	import { AlertCircle, ArrowLeft } from '@lucide/svelte';
+	import { ArrowLeft, CircleAlert } from '@lucide/svelte';
 	import type { JSONSchema7 } from 'json-schema';
 
 	import type { PageData } from './$types';
@@ -19,21 +19,26 @@
 {#if !cluster}
 	<div class="flex h-32 items-center justify-center">
 		<div class="text-center space-y-2">
-			<AlertCircle class="h-8 w-8 text-muted-foreground mx-auto" />
+			<CircleAlert class="h-8 w-8 text-muted-foreground mx-auto" />
 			<h3 class="text-lg font-semibold">Cluster Not Found</h3>
 			<p class="text-sm text-muted-foreground">The requested cluster could not be loaded.</p>
 		</div>
 	</div>
 {:else}
-	<div class="space-y-6">
+	<div class="container mx-auto p-4 space-y-6">
 		<Button variant="outline" size="sm" href="/">
 			<ArrowLeft class="h-4 w-4" />
 			Back to Home
 		</Button>
 
 		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-4">
+			<div class="mb-4 space-y-2">
 				<h1 class="text-3xl font-bold tracking-tight">{cluster.name}</h1>
+				{#if cluster.description}
+					<div class="text-slate-700 dark:text-slate-300">
+						{cluster.description}
+					</div>
+				{/if}
 			</div>
 		</div>
 
@@ -41,7 +46,7 @@
 			<Card>
 				<CardContent class="flex h-32 items-center justify-center">
 					<div class="text-center space-y-2">
-						<AlertCircle class="h-8 w-8 text-muted-foreground mx-auto" />
+						<CircleAlert class="h-8 w-8 text-muted-foreground mx-auto" />
 						<h3 class="text-lg font-semibold">Node Not Found</h3>
 						<p class="text-sm text-muted-foreground">The requested node could not be found.</p>
 					</div>
@@ -72,7 +77,7 @@
 							<NodeDetail {nodeData} {schema} />
 						{:else}
 							<div class="text-center space-y-2">
-								<AlertCircle class="h-8 w-8 text-muted-foreground mx-auto" />
+								<CircleAlert class="h-8 w-8 text-muted-foreground mx-auto" />
 								<h3 class="text-lg font-semibold">No Data Available</h3>
 								<p class="text-sm text-muted-foreground">The node data could not be displayed.</p>
 							</div>

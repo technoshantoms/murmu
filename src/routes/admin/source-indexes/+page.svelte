@@ -39,7 +39,7 @@
 	}
 </script>
 
-<div class="container mx-auto space-y-6 py-4">
+<div class="container mx-auto space-y-6 p-4">
 	<div class="flex items-center justify-between">
 		<div>
 			<h1 class="text-3xl font-bold">Source Index Configuration</h1>

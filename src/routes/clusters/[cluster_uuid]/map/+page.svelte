@@ -12,7 +12,7 @@
 	import type { ClusterPublic } from '$lib/types/cluster';
 	import type { DropdownField } from '$lib/types/enum-dropdown';
 	import type { MapNode } from '$lib/types/node';
-	import { AlertCircle, ArrowLeft, Check, Code, Copy, Search, Tag } from '@lucide/svelte';
+	import { ArrowLeft, Check, CircleAlert, Code, Copy, Search, Tag } from '@lucide/svelte';
 	import L, { MarkerClusterGroup } from 'leaflet';
 
 	import { untrack } from 'svelte';
@@ -152,11 +152,11 @@
 	}
 </script>
 
-<div class="container mx-auto py-4">
+<div class="container mx-auto p-4">
 	{#if !cluster}
 		<div class="flex h-32 items-center justify-center">
 			<div class="text-center space-y-2">
-				<AlertCircle class="h-8 w-8 text-muted-foreground mx-auto" />
+				<CircleAlert class="h-8 w-8 text-muted-foreground mx-auto" />
 				<h3 class="text-lg font-semibold">Cluster Not Found</h3>
 				<p class="text-sm text-muted-foreground">The requested cluster could not be loaded.</p>
 			</div>
@@ -318,7 +318,7 @@
 				<Card>
 					<CardContent class="flex h-32 items-center justify-center">
 						<div class="text-center space-y-2">
-							<AlertCircle class="h-8 w-8 text-muted-foreground mx-auto" />
+							<CircleAlert class="h-8 w-8 text-muted-foreground mx-auto" />
 							<h3 class="text-lg font-semibold">
 								{nameSearch.trim() || tagSearch.trim()
 									? 'No Results Found'
