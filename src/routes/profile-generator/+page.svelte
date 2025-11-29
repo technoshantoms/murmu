@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { getProfile, getProfiles } from '$lib/api/profiles';
+	import { getSchemas } from '$lib/api/schemas';
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { dbStatus } from '$lib/stores/db-status';
+	import { sourceIndexStore } from '$lib/stores/source-index';
 	import type { Profile, ProfileCardType, ProfileObject } from '$lib/types/profile';
-	import type { BasicSchema } from '$lib/types/schema';
 	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
 
 	import { onMount } from 'svelte';
@@ -25,6 +26,10 @@
 	let currentTitle: string = $state('');
 	let currentCuid: string = $state('');
 	let isDbOnline: boolean = $state(true);
+	let schemasList: { value: string; label: string }[] = $state([]);
+	let sourceIndexUrl: string = $state('');
+	let sourceLibraryUrl: string = $state('');
+	let sourceIndexId: number | null = $state(null);
 
 	const user = data?.user ?? null;
 
@@ -32,8 +37,11 @@
 	dbStatus.subscribe((value) => (isDbOnline = value));
 
 	onMount(async () => {
-		if (data.errorMessage) {
-			toast.error(data.errorMessage);
+		if ($sourceIndexStore) {
+			await loadInitialData();
+		} else {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
 		}
 
 		if (user) {
@@ -41,9 +49,58 @@
 		}
 	});
 
+	async function loadInitialData() {
+		sourceIndexId = $sourceIndexStore;
+
+		if (!sourceIndexId) {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
+		}
+
+		const src = data.sourceIndexes.find((s) => s.id === sourceIndexId);
+
+		if (!src) {
+			toast.error('Invalid Source Index.');
+			return;
+		}
+
+		sourceLibraryUrl = src.libraryUrl;
+		sourceIndexUrl = src.url;
+
+		try {
+			const { data: schemas } = await getSchemas(`${sourceLibraryUrl}/v2/schemas`);
+			schemasList = schemas
+				.filter(({ name }) => !name.startsWith('default-v'))
+				.filter(({ name }) => !name.startsWith('test_schema-v'))
+				.map(({ name }) => ({
+					value: name,
+					label: name
+				}))
+				.sort((a, b) => a.label.localeCompare(b.label));
+		} catch (err) {
+			console.error(err);
+			toast.error('Failed to load schemas from the selected Source Index.');
+		}
+	}
+
+	// When the source index changes, load the initial data
+	$effect(() => {
+		const id = $sourceIndexStore;
+		if (!id) return;
+
+		queueMicrotask(async () => {
+			await loadInitialData();
+
+			schemasSelected = [];
+			currentProfile = {};
+			currentTitle = '';
+			currentCuid = '';
+		});
+	});
+
 	// Fetch profiles when dbStatus is online and user is logged in
 	$effect(() => {
-		if (isDbOnline && user) {
+		if (isDbOnline && user && sourceIndexUrl) {
 			fetchProfiles();
 		}
 	});
@@ -64,8 +121,13 @@
 	}
 
 	async function fetchProfiles(): Promise<void> {
+		if (!sourceIndexId) {
+			toast.error('Please select a Source Index first.');
+			return;
+		}
+
 		try {
-			const { data: profiles, success } = await getProfiles();
+			const { data: profiles, success } = await getProfiles(sourceIndexId);
 			if (success) {
 				profileCards = profiles.map((profile: Profile) => ({
 					cuid: profile.cuid,
@@ -137,6 +199,7 @@
 				{#each profileCards as profileCard (profileCard.cuid)}
 					<ProfileCard
 						{...profileCard}
+						{sourceIndexUrl}
 						profileUpdated={handleProfileUpdated}
 						profileModify={handleProfileModify}
 					/>
@@ -147,7 +210,7 @@
 			<div class="md:col-span-2 space-y-4">
 				{#if schemasSelected.length === 0}
 					<SchemaSelector
-						schemasList={data.schemasList.map((schema: BasicSchema) => schema.name)}
+						schemasList={schemasList.map(({ value }) => value)}
 						schemaSelected={handleSchemasSelected}
 					/>
 				{:else}
@@ -159,6 +222,9 @@
 						schemasReset={handleSchemasReset}
 						profileUpdated={handleProfileUpdated}
 						{user}
+						{sourceIndexUrl}
+						{sourceLibraryUrl}
+						{sourceIndexId}
 					/>
 				{/if}
 			</div>

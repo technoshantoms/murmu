@@ -1,19 +1,20 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { getClusters } from '$lib/api/clusters';
 	import * as Accordion from '$lib/components/ui/accordion/index.js';
 	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
+	import { sourceIndexStore } from '$lib/stores/source-index';
 	import { currentTokenStore } from '$lib/stores/token-store';
 	import { userStore } from '$lib/stores/user-store';
+	import type { Cluster } from '$lib/types/cluster';
 	import { formatDate } from '$lib/utils/date';
 	import { CircleAlert } from '@lucide/svelte';
 	import type { Page } from '@sveltejs/kit';
 
-	import type { PageData } from './$types';
-
-	let { data }: { data: PageData } = $props();
-
 	let currentToken: string | null = $state(null);
 	let enableSiteHints: boolean = $state(true);
+	let clusters: Cluster[] = $state([]);
+	let isLoading: boolean = $state(false);
 
 	interface CustomPageState extends Page {
 		state: {
@@ -23,14 +24,38 @@
 
 	let typedPage = page as unknown as CustomPageState;
 
-	const { clusters } = data;
-
 	currentTokenStore.subscribe((value) => {
 		currentToken = value;
 	});
 
 	userStore.subscribe((value) => {
 		enableSiteHints = value?.enableSiteHints ?? true;
+	});
+
+	async function loadClusters(sourceIndexId?: number) {
+		isLoading = true;
+		try {
+			const { data: clustersData, success } = await getClusters(sourceIndexId);
+			if (success) {
+				clusters = clustersData || [];
+			} else {
+				clusters = [];
+			}
+		} catch (error) {
+			console.error('Failed to load clusters:', error);
+			clusters = [];
+		} finally {
+			isLoading = false;
+		}
+	}
+
+	$effect(() => {
+		const sourceIndexId = $sourceIndexStore;
+		if (sourceIndexId) {
+			loadClusters(sourceIndexId);
+		} else {
+			clusters = [];
+		}
 	});
 </script>
 
@@ -107,7 +132,13 @@
 		{/if}
 	</div>
 
-	{#if clusters.length === 0}
+	{#if isLoading}
+		<div class="flex h-32 items-center justify-center">
+			<div class="text-center">
+				<p class="text-lg font-semibold text-slate-700 dark:text-slate-300">Loading clusters...</p>
+			</div>
+		</div>
+	{:else if clusters.length === 0}
 		<div class="flex h-32 items-center justify-center">
 			<div class="text-center">
 				<p class="text-lg font-semibold text-slate-700 dark:text-slate-300">

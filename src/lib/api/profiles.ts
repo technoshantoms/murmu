@@ -1,4 +1,3 @@
-import { PUBLIC_INDEX_URL } from '$env/static/public';
 import { request } from '$lib/api/request';
 import type {
 	Profile,
@@ -7,53 +6,70 @@ import type {
 	ProfileUpdateInput
 } from '$lib/types/profile';
 
-export const validateProfile = (profile: ProfileObject, customFetch?: typeof fetch) =>
+export const validateProfile = (
+	profile: ProfileObject,
+	sourceIndexUrl: string,
+	customFetch?: typeof fetch
+) =>
 	request<ProfileObject, undefined>(
-		`${PUBLIC_INDEX_URL}/v2/validate`,
+		`${sourceIndexUrl}/v2/validate`,
 		'POST',
 		profile,
 		customFetch,
 		false
 	);
 
-export const getIndexStatus = (nodeId: string, customFetch?: typeof fetch) =>
+export const getIndexStatus = (
+	nodeId: string,
+	sourceIndexUrl: string,
+	customFetch?: typeof fetch
+) =>
 	request<undefined, { status: string }>(
-		`/api/index/nodes/${nodeId}`,
+		`/api/index/nodes/${nodeId}?source_index_url=${encodeURIComponent(sourceIndexUrl)}`,
 		'GET',
 		undefined,
 		customFetch,
 		false
 	);
 
-export const postProfileToIndex = (cuid: string, customFetch?: typeof fetch) =>
-	request<undefined, { node_id: string }>(
+export const postProfileToIndex = (
+	cuid: string,
+	sourceIndexUrl: string,
+	customFetch?: typeof fetch
+) =>
+	request<{ source_index_url: string }, { node_id: string }>(
 		`/api/index/nodes/${cuid}`,
 		'POST',
-		undefined,
+		{ source_index_url: sourceIndexUrl },
 		customFetch,
 		false
 	);
 
-export const postIndex = (profileUrl: string, customFetch?: typeof fetch) =>
-	request<{ profile_url: string }, { node_id: string }>(
+export const postIndex = (profileUrl: string, sourceIndexUrl: string, customFetch?: typeof fetch) =>
+	request<{ profile_url: string; source_index_url: string }, { node_id: string }>(
 		`/api/index/nodes`,
 		'POST',
-		{ profile_url: profileUrl },
+		{ profile_url: profileUrl, source_index_url: sourceIndexUrl },
 		customFetch,
 		false
 	);
 
-export const deleteIndex = (nodeId: string, customFetch?: typeof fetch) =>
-	request<undefined, undefined>(
+export const deleteIndex = (nodeId: string, sourceIndexUrl: string, customFetch?: typeof fetch) =>
+	request<{ source_index_url: string }, undefined>(
 		`/api/index/nodes/${nodeId}`,
 		'DELETE',
-		undefined,
+		{ source_index_url: sourceIndexUrl },
 		customFetch,
 		false
 	);
 
-export const getProfiles = (customFetch?: typeof fetch) =>
-	request<undefined, Profile[]>(`/api/profiles`, 'GET', undefined, customFetch);
+export const getProfiles = (sourceIndexId: number, customFetch?: typeof fetch) =>
+	request<undefined, Profile[]>(
+		`/api/profiles?source_index_id=${sourceIndexId}`,
+		'GET',
+		undefined,
+		customFetch
+	);
 
 export const getProfile = (cuid: string, customFetch?: typeof fetch) =>
 	request<undefined, Profile>(`/api/profiles/${cuid}`, 'GET', undefined, customFetch);

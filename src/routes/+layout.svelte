@@ -13,6 +13,7 @@
 	import { getDelegations, getToken, storeDelegations, storeToken } from '$lib/core';
 	import { getOrCreateKeyPair } from '$lib/crypto';
 	import { dbStatus } from '$lib/stores/db-status';
+	import { sourceIndexStore } from '$lib/stores/source-index';
 	import {
 		currentTokenStore,
 		delegationsStore,
@@ -34,13 +35,46 @@
 
 	import '../app.css';
 
-	let { children } = $props();
+	let { children, data } = $props();
 
 	let isDbOnline: boolean = $state(true);
 	let isOnline: boolean = $state(true);
 	let isReady: boolean = $state(true);
 
 	const siteName = 'MurmurMaps';
+
+	// Source Index Selector
+	let selectedSourceIndexId: string = $state('');
+
+	sourceIndexStore.subscribe((v) => (selectedSourceIndexId = v?.toString() ?? ''));
+
+	// Auto-select first source index if none is selected or if selected one is invalid
+	$effect(() => {
+		if (data.sourceIndexes.length > 0) {
+			if (!selectedSourceIndexId) {
+				const firstSourceIndex = data.sourceIndexes[0];
+				sourceIndexStore.set(firstSourceIndex.id);
+			} else {
+				const isValidSelection = data.sourceIndexes.some(
+					(s) => s.id.toString() === selectedSourceIndexId
+				);
+				if (!isValidSelection) {
+					const firstSourceIndex = data.sourceIndexes[0];
+					sourceIndexStore.set(firstSourceIndex.id);
+				}
+			}
+		}
+	});
+
+	function handleSourceIndexChange(value: string | null) {
+		if (!value) return;
+		sourceIndexStore.set(value ? Number(value) : null);
+	}
+
+	const sourceIndexTriggerContent = $derived(
+		data.sourceIndexes.find((s) => s.id.toString() === selectedSourceIndexId)?.label ??
+			'Select a Source Index'
+	);
 
 	// Define routes that do not require DB status check
 	const routesWithDbCheck = ['/profile-generator', '/batch-importer'];
@@ -86,6 +120,14 @@
 		'/index-updater',
 		'/no-access',
 		'/admin/no-access'
+	];
+
+	const hasSourceIndexRoute = [
+		'/',
+		'/profile-generator',
+		'/batch-importer',
+		'/index-explorer',
+		'/index-updater'
 	];
 
 	function isPublicRoute(path: string): boolean {
@@ -535,7 +577,9 @@
 			<Sidebar.Provider>
 				<AppSidebar {currentToken} />
 				<Sidebar.Inset>
-					<header class="flex h-16 shrink-0 items-center gap-2 border-b">
+					<header
+						class="flex flex-col md:flex-row h-auto md:h-16 shrink-0 items-start md:items-center justify-between border-b px-3 py-2 gap-2"
+					>
 						<div class="flex items-center gap-2 px-3">
 							<Sidebar.Trigger />
 							<Separator orientation="vertical" class="mr-2 data-[orientation=vertical]:h-4" />
@@ -553,6 +597,32 @@
 								</Breadcrumb.List>
 							</Breadcrumb.Root>
 						</div>
+
+						<!-- Source Index Selector -->
+						{#if hasSourceIndexRoute.includes(page.url.pathname)}
+							<div class="flex items-center gap-2 self-end md:self-auto">
+								<Select.Root
+									type="single"
+									bind:value={selectedSourceIndexId}
+									onValueChange={handleSourceIndexChange}
+								>
+									<Select.Trigger class="w-[200px] md:w-[220px]">
+										{sourceIndexTriggerContent}
+									</Select.Trigger>
+									<Select.Content>
+										<Select.Group>
+											<Select.Label class="px-2 py-1 text-sm font-medium">Data Sources</Select.Label
+											>
+											{#each data.sourceIndexes as src (src.id)}
+												<Select.Item value={String(src.id)} label={src.label}>
+													{src.label}
+												</Select.Item>
+											{/each}
+										</Select.Group>
+									</Select.Content>
+								</Select.Root>
+							</div>
+						{/if}
 					</header>
 					<div class="flex flex-1 flex-col gap-4">
 						{@render children()}

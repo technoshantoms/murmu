@@ -11,6 +11,10 @@ export const clusters = sqliteTable('clusters', {
 	centerLat: real('center_lat').default(46.603354).notNull(),
 	centerLon: real('center_lon').default(1.888334).notNull(),
 	scale: integer('scale').default(5).notNull(),
+	sourceIndexId: integer('source_index_id')
+		.notNull()
+		.default(1)
+		.references(() => sourceIndexes.id),
 	lastUpdated: integer('last_updated', { mode: 'number' })
 		.notNull()
 		.default(sql`(unixepoch())`),
@@ -122,12 +126,14 @@ export const sourceIndexes = sqliteTable('source_indexes', {
 	url: text('url').unique().notNull(),
 	label: text('label').notNull(),
 	libraryUrl: text('library_url').notNull(),
+	dataProxyUrl: text('data_proxy_url').notNull().default(''),
 	createdAt: integer('created_at', { mode: 'number' })
 		.notNull()
 		.default(sql`(unixepoch())`),
 	updatedAt: integer('updated_at', { mode: 'number' })
 		.notNull()
-		.default(sql`(unixepoch())`)
+		.default(sql`(unixepoch())`),
+	deletedAt: integer('deleted_at', { mode: 'number' }).default(sql`(NULL)`)
 });
 
 export const profiles = sqliteTable('profiles', {
@@ -136,6 +142,10 @@ export const profiles = sqliteTable('profiles', {
 	userId: integer('user_id')
 		.notNull()
 		.references(() => users.id),
+	sourceIndexId: integer('source_index_id')
+		.notNull()
+		.default(2)
+		.references(() => sourceIndexes.id),
 	linkedSchemas: text('linked_schemas'),
 	title: text('title'),
 	profile: text('profile'),
@@ -293,5 +303,19 @@ export const roleCapabilitiesRelations = relations(roleCapabilities, ({ one }) =
 	capability: one(capabilities, {
 		fields: [roleCapabilities.capabilityId],
 		references: [capabilities.id]
+	})
+}));
+
+export const profilesRelations = relations(profiles, ({ one }) => ({
+	sourceIndex: one(sourceIndexes, {
+		fields: [profiles.sourceIndexId],
+		references: [sourceIndexes.id]
+	})
+}));
+
+export const clustersRelations = relations(clusters, ({ one }) => ({
+	sourceIndex: one(sourceIndexes, {
+		fields: [clusters.sourceIndexId],
+		references: [sourceIndexes.id]
 	})
 }));

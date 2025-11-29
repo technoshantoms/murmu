@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createBatch, deleteBatch, getBatches, updateBatch } from '$lib/api/batches';
+	import { getSchemas } from '$lib/api/schemas';
 	import { Alert, AlertDescription } from '$lib/components/ui/alert';
 	import * as AlertDialog from '$lib/components/ui/alert-dialog';
 	import { Badge } from '$lib/components/ui/badge';
@@ -8,14 +9,15 @@
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
+	import { Progress } from '$lib/components/ui/progress';
 	import { Separator } from '$lib/components/ui/separator';
 	import { dbStatus } from '$lib/stores/db-status';
+	import { sourceIndexStore } from '$lib/stores/source-index';
 	import type { Batch } from '$lib/types/batch';
 	import type { ValidationError } from '$lib/types/profile';
-	import type { BasicSchema } from '$lib/types/schema';
-	import { Database, Edit, Hash, Trash2 } from '@lucide/svelte';
+	import { Database, Hash, SquarePen, Trash2 } from '@lucide/svelte';
 
-	import { onMount } from 'svelte';
+	import { onDestroy, onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 
 	import SchemaSelector from '../profile-generator/SchemaSelector.svelte';
@@ -35,17 +37,116 @@
 	let currentBatchId: string | null = null;
 	let isDbOnline = $state(true);
 	let dialogOpen: boolean = $state(false);
+	let schemasList: { value: string; label: string }[] = $state([]);
+	let sourceIndexId: number | null = $state(null);
+	let sourceDataProxyUrl: string = $state('');
+	let hasIncomplete = $derived(batchCards.some((b) => b.status !== 'completed'));
+	let pollingInterval: ReturnType<typeof setInterval> | null = null;
+	let batchToDelete: Batch | null = $state(null);
 
 	// Subscribe to dbStatus changes
 	dbStatus.subscribe((value) => (isDbOnline = value));
 
 	onMount(async () => {
-		if (data.errorMessage) {
-			toast.error(data.errorMessage);
+		if ($sourceIndexStore) {
+			await loadInitialData();
+		} else {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
 		}
 
 		if (user) {
 			await fetchBatches();
+		}
+	});
+
+	onDestroy(() => {
+		if (pollingInterval) clearInterval(pollingInterval);
+	});
+
+	function startPolling() {
+		if (pollingInterval) clearInterval(pollingInterval);
+		isLoading = true;
+
+		pollingInterval = setInterval(async () => {
+			try {
+				await fetchBatches();
+
+				if (!hasIncomplete) {
+					stopPolling();
+					toast.success('All batches completed.');
+				}
+			} catch (err) {
+				console.error('Polling error:', err);
+				stopPolling();
+				toast.error('Failed to poll batch status. Please try again.');
+			}
+		}, 2000);
+	}
+
+	function stopPolling() {
+		if (pollingInterval) {
+			clearInterval(pollingInterval);
+			pollingInterval = null;
+		}
+		isLoading = false;
+	}
+
+	async function loadInitialData() {
+		sourceIndexId = $sourceIndexStore;
+
+		if (!sourceIndexId) {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
+		}
+
+		const src = data.sourceIndexes.find((s) => s.id === sourceIndexId);
+
+		if (!src) {
+			toast.error('Invalid Source Index.');
+			return;
+		}
+
+		const libraryUrl = src.libraryUrl;
+		sourceDataProxyUrl = src.dataProxyUrl;
+
+		try {
+			const { data: schemas } = await getSchemas(`${libraryUrl}/v2/schemas`);
+			schemasList = schemas
+				.filter(({ name }) => !name.startsWith('default-v'))
+				.filter(({ name }) => !name.startsWith('test_schema-v'))
+				.map(({ name }) => ({
+					value: name,
+					label: name
+				}))
+				.sort((a, b) => a.label.localeCompare(b.label));
+		} catch (err) {
+			console.error(err);
+			toast.error('Failed to load schemas from the selected Source Index.');
+		}
+	}
+
+	// When the source index changes, load the initial data
+	$effect(() => {
+		const id = $sourceIndexStore;
+		if (!id) return;
+
+		queueMicrotask(async () => {
+			await loadInitialData();
+
+			schemasSelected = [];
+			title = '';
+			file = undefined;
+			errorsMessage = null;
+			isModifyMode = false;
+			currentBatchId = null;
+		});
+	});
+
+	// Fetch batches when dbStatus is online and user is logged in
+	$effect(() => {
+		if (isDbOnline && user && sourceIndexId) {
+			fetchBatches();
 		}
 	});
 
@@ -58,6 +159,11 @@
 				return;
 			}
 
+			if (!sourceIndexId) {
+				toast.error('Please select a Source Index first.');
+				return;
+			}
+
 			if (file[0].type !== 'text/csv') {
 				toast.error('Only CSV files are allowed');
 				return;
@@ -67,6 +173,7 @@
 			formData.append('file', file[0]);
 			formData.append('schemas', JSON.stringify(schemasSelected));
 			formData.append('title', title);
+			formData.append('source_data_proxy_url', sourceDataProxyUrl);
 
 			let success: boolean;
 			let errors: ValidationError[] | null;
@@ -115,22 +222,41 @@
 			const wasModifyMode = isModifyMode;
 			resetForm();
 			toast.success(wasModifyMode ? 'Batch modified successfully' : 'Batch imported successfully');
+
+			// Start polling if there are incomplete batches
+			if (hasIncomplete) {
+				startPolling();
+			}
 		} catch (err) {
 			toast.error(
 				(err as Error).message ||
 					'An error occurred while processing your request, please try again later'
 			);
 		} finally {
-			isLoading = false;
+			if (!hasIncomplete) {
+				isLoading = false;
+			}
 		}
 	}
 
-	async function handleDeleteBatch(batch: Batch): Promise<void> {
+	function confirmDelete(batch: Batch): void {
+		dialogOpen = true;
+		currentBatchId = batch.batch_id;
+		batchToDelete = batch;
+	}
+
+	async function handleDeleteBatch(): Promise<void> {
 		try {
 			isLoading = true;
 
+			if (!currentBatchId) {
+				toast.error('No batch selected for deletion');
+				return;
+			}
+
 			const formData = new FormData();
-			formData.append('batch_id', batch.batch_id);
+			formData.append('batch_id', currentBatchId);
+			formData.append('source_data_proxy_url', sourceDataProxyUrl);
 
 			const { success, errors } = await deleteBatch(formData);
 
@@ -145,13 +271,20 @@
 			await fetchBatches();
 			dialogOpen = false;
 			toast.success('Batch deleted successfully');
+
+			// Start polling if there are incomplete batches
+			if (hasIncomplete) {
+				startPolling();
+			}
 		} catch (err) {
 			toast.error(
 				(err as Error).message ||
 					'An error occurred while processing your request, please try again later'
 			);
 		} finally {
-			isLoading = false;
+			if (!hasIncomplete) {
+				isLoading = false;
+			}
 			resetForm();
 		}
 	}
@@ -170,13 +303,21 @@
 	}
 
 	async function fetchBatches(): Promise<void> {
+		if (!sourceIndexId) {
+			toast.error('Please select a Source Index first.');
+			return;
+		}
+
 		try {
-			const { data: batches, success } = await getBatches();
+			const { data: batches, success } = await getBatches(sourceDataProxyUrl);
 			if (success) {
 				batchCards = batches.map((batch: Batch) => ({
 					title: batch.title,
 					batch_id: batch.batch_id,
-					schemas: batch.schemas
+					schemas: batch.schemas,
+					status: batch.status,
+					processed_nodes: batch.processed_nodes,
+					total_nodes: batch.total_nodes
 				}));
 			} else {
 				toast.error('Failed to fetch batches');
@@ -255,6 +396,16 @@
 							</div>
 						</div>
 
+						{#if batch.status !== 'completed'}
+							<div class="mt-4 space-y-2">
+								<div class="text-sm text-muted-foreground">
+									{batch.status} – {batch.processed_nodes}/{batch.total_nodes}
+								</div>
+
+								<Progress value={(batch.processed_nodes / batch.total_nodes) * 100} class="h-2" />
+							</div>
+						{/if}
+
 						<Separator class="my-4" />
 
 						<div class="flex items-center gap-3">
@@ -262,9 +413,9 @@
 								onclick={() => handleModify(batch)}
 								size="sm"
 								class="flex items-center gap-2"
-								disabled={!isDbOnline || isLoading}
+								disabled={!isDbOnline || isLoading || batch.status !== 'completed'}
 							>
-								<Edit class="h-4 w-4" />
+								<SquarePen class="h-4 w-4" />
 								Modify
 							</Button>
 							<AlertDialog.Root bind:open={dialogOpen}>
@@ -274,7 +425,8 @@
 										size: 'sm'
 									}) +
 										' flex items-center gap-2 text-destructive border-destructive/20 hover:bg-destructive/10 hover:border-destructive/30 bg-transparent cursor-pointer'}
-									disabled={!isDbOnline}
+									disabled={!isDbOnline || batch.status !== 'completed'}
+									onclick={() => confirmDelete(batch)}
 								>
 									<Trash2 class="h-4 w-4" />
 									Delete
@@ -285,14 +437,13 @@
 									</AlertDialog.Header>
 									<AlertDialog.Description>
 										<p>
-											Are you sure you want to delete the batch: {batch.title}?
+											Are you sure you want to delete the batch: {batchToDelete?.title}?
 										</p>
 									</AlertDialog.Description>
 									<AlertDialog.Footer>
 										<AlertDialog.Cancel class="cursor-pointer">Cancel</AlertDialog.Cancel>
-										<AlertDialog.Action
-											class="cursor-pointer"
-											onclick={() => handleDeleteBatch(batch)}>Continue</AlertDialog.Action
+										<AlertDialog.Action class="cursor-pointer" onclick={handleDeleteBatch}
+											>Continue</AlertDialog.Action
 										>
 									</AlertDialog.Footer>
 								</AlertDialog.Content>
@@ -319,7 +470,7 @@
 			{/if}
 			{#if schemasSelected.length === 0}
 				<SchemaSelector
-					schemasList={data.schemasList.map((schema: BasicSchema) => schema.name)}
+					schemasList={schemasList.map(({ value }) => value)}
 					schemaSelected={handleSchemasSelected}
 				/>
 			{:else}

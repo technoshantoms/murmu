@@ -8,7 +8,7 @@
 	import { Card, CardContent } from '$lib/components/ui/card';
 	import { Separator } from '$lib/components/ui/separator';
 	import { dbStatus } from '$lib/stores/db-status';
-	import { Clock, Database, Edit, Trash2 } from '@lucide/svelte';
+	import { Clock, Database, SquarePen, Trash2 } from '@lucide/svelte';
 	import { createQuery, QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
 
 	import { toast } from 'svelte-sonner';
@@ -23,6 +23,7 @@
 		status: string;
 		last_updated: string;
 		schemas: string[];
+		sourceIndexUrl: string;
 		profileUpdated: () => void;
 		profileModify: (cuid: string) => Promise<void>;
 	}
@@ -34,6 +35,7 @@
 		status,
 		last_updated,
 		schemas,
+		sourceIndexUrl,
 		profileUpdated,
 		profileModify
 	}: Props = $props();
@@ -66,8 +68,13 @@
 			return status;
 		}
 
+		if (!sourceIndexUrl) {
+			toast.error('Please select a Source Index first.');
+			return 'unknown';
+		}
+
 		try {
-			const { data, error } = await getIndexStatus(node_id);
+			const { data, error } = await getIndexStatus(node_id, sourceIndexUrl);
 			if (data?.status) {
 				return data.status ?? 'unknown';
 			} else {
@@ -96,7 +103,7 @@
 		try {
 			await deleteProfile(cuid);
 			if (node_id) {
-				await deleteIndex(node_id);
+				await deleteIndex(node_id, sourceIndexUrl);
 			}
 			profileUpdated();
 			dialogOpen = false;
@@ -158,7 +165,7 @@
 					class="flex items-center gap-2"
 					disabled={!isDbOnline}
 				>
-					<Edit class="h-4 w-4" />
+					<SquarePen class="h-4 w-4" />
 					Modify
 				</Button>
 				<AlertDialog.Root bind:open={dialogOpen}>

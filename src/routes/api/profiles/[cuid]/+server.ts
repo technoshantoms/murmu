@@ -2,6 +2,7 @@ import { validateProfile } from '$lib/api/profiles';
 import { getDB } from '$lib/server/db';
 import { deleteProfile, getProfileByCuid, updateProfile } from '$lib/server/models/profiles';
 import { getUserIdByPublicKey } from '$lib/server/models/public-key';
+import { getSourceIndexById } from '$lib/server/models/source-index';
 import type { ProfileDbUpdateInput, ProfileObject } from '$lib/types/profile';
 import { authenticateUcanRequest } from '$lib/utils/ucan-utils.server';
 import type { D1Database } from '@cloudflare/workers-types';
@@ -83,13 +84,21 @@ export const PATCH: RequestHandler = async ({
 			return json({ error: 'User not found', success: false }, { status: 404 });
 		}
 
-		const { title, lastUpdated, profile } = await request.json();
+		const { title, lastUpdated, profile, sourceIndexId } = await request.json();
 
-		if (!cuid || !title || !lastUpdated || !profile) {
+		if (!cuid || !title || !lastUpdated || !profile || !sourceIndexId) {
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
 		}
 
-		const validationResult = await validateProfile(JSON.parse(profile) as ProfileObject);
+		const sourceIndex = await getSourceIndexById(db, sourceIndexId);
+		if (!sourceIndex) {
+			return json({ error: 'Source index not found', success: false }, { status: 404 });
+		}
+
+		const validationResult = await validateProfile(
+			JSON.parse(profile) as ProfileObject,
+			sourceIndex.url
+		);
 		if (validationResult.errors) {
 			return json({ errors: validationResult.errors, success: false }, { status: 422 });
 		}
@@ -98,7 +107,8 @@ export const PATCH: RequestHandler = async ({
 			title,
 			lastUpdated: Number(lastUpdated),
 			profile,
-			updatedAt: Math.floor(new Date().getTime() / 1000)
+			updatedAt: Math.floor(new Date().getTime() / 1000),
+			sourceIndexId
 		};
 		const isUpdated = await updateProfile(db, cuid, userByPublicKey.userId, profileUpdate);
 

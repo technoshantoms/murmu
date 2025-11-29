@@ -1,19 +1,22 @@
 <script lang="ts">
 	import { pushState } from '$app/navigation';
+	import { getCountries } from '$lib/api/countries';
 	import { getIndexNodes } from '$lib/api/index-node';
-	import * as Alert from '$lib/components/ui/alert/index.js';
+	import { getSchemas } from '$lib/api/schemas';
 	import { Badge } from '$lib/components/ui/badge/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import * as Pagination from '$lib/components/ui/pagination/index.js';
 	import * as Select from '$lib/components/ui/select/index.js';
 	import * as Table from '$lib/components/ui/table/index.js';
+	import { sourceIndexStore } from '$lib/stores/source-index';
 	import type { IndexNode, IndexNodeMeta } from '$lib/types/index-node';
 	import type { IndexSearchParams } from '$lib/types/index-search-params';
 	import { formatDate } from '$lib/utils/date';
-	import { ChevronLeftIcon, ChevronRightIcon, CircleAlert } from '@lucide/svelte';
+	import { ChevronLeftIcon, ChevronRightIcon } from '@lucide/svelte';
 
 	import { onMount, tick } from 'svelte';
+	import { toast } from 'svelte-sonner';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 	import { MediaQuery } from 'svelte/reactivity';
 
@@ -22,7 +25,6 @@
 
 	let { data }: { data: PageData } = $props();
 
-	let error: string | null = $state(null);
 	let sortedNodes: IndexNode[] = $state([]);
 	let meta: IndexNodeMeta = $state({
 		message: '',
@@ -55,6 +57,9 @@
 	let tagsExactChecked: boolean = $state(false);
 	let sortProp: string = $state('');
 	let sortOrder: 'asc' | 'desc' | null = $state(null);
+	let schemasList: { value: string; label: string }[] = $state([]);
+	let countries: string[] = $state([]);
+	let sourceIndexUrl: string = $state('');
 
 	const isDesktop = new MediaQuery('(min-width: 768px)');
 
@@ -62,12 +67,12 @@
 	const schemaOptions = $derived([
 		{ value: '', label: 'Select a schema' },
 		{ value: 'all', label: 'All schemas' },
-		...data.schemasList.map((schema) => ({ value: schema.name, label: schema.name }))
+		...schemasList
 	]);
 
 	const countryOptions = $derived([
 		{ value: '', label: 'Select a Country' },
-		...data.countries.map((country) => ({ value: country, label: country }))
+		...countries.map((country) => ({ value: country, label: country }))
 	]);
 
 	const statusOptions = $derived([
@@ -103,9 +108,94 @@
 	const siblingCount = $derived(isDesktop.current ? 1 : 0);
 
 	onMount(async () => {
+		if ($sourceIndexStore) {
+			await loadInitialData();
+		} else {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
+		}
+
 		if (searchParams.toString()) {
 			await performSearch();
 		}
+	});
+
+	async function loadInitialData() {
+		const sourceIndexId = $sourceIndexStore;
+
+		if (!sourceIndexId) {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
+		}
+
+		const src = data.sourceIndexes.find((s) => s.id === sourceIndexId);
+
+		if (!src) {
+			toast.error('Invalid Source Index.');
+			return;
+		}
+
+		const libraryUrl = src.libraryUrl;
+		sourceIndexUrl = src.url;
+
+		try {
+			// schemas
+			const { data: schemas } = await getSchemas(`${libraryUrl}/v2/schemas`);
+			schemasList = schemas
+				.filter(({ name }) => !name.startsWith('default-v'))
+				.filter(({ name }) => !name.startsWith('test_schema-v'))
+				.map(({ name }) => ({
+					value: name,
+					label: name
+				}))
+				.sort((a, b) => a.label.localeCompare(b.label));
+
+			// countries
+			const { data: rawCountries } = await getCountries(`${libraryUrl}/v2/countries`, fetch);
+			countries = Object.keys(rawCountries);
+		} catch (err) {
+			console.error(err);
+			toast.error('Failed to load schemas/countries from the selected Source Index.');
+		}
+	}
+
+	// When the source index changes, load the initial data
+	$effect(() => {
+		const id = $sourceIndexStore;
+		if (!id) return;
+
+		queueMicrotask(async () => {
+			await loadInitialData();
+
+			searchParams = new SvelteURLSearchParams();
+			searchParamsObj = {
+				schema: '',
+				name: '',
+				tags: '',
+				primary_url: '',
+				last_updated: '',
+				lat: '',
+				lon: '',
+				range: '',
+				locality: '',
+				region: '',
+				country: '',
+				status: '',
+				tags_filter: 'or',
+				tags_exact: 'false',
+				page_size: '30',
+				page: '1'
+			};
+
+			sortedNodes = [];
+			meta = {
+				message: '',
+				number_of_results: 0,
+				total_pages: 0
+			};
+
+			pushState(window.location.pathname, '');
+		});
 	});
 
 	async function performSearch(): Promise<void> {
@@ -126,7 +216,7 @@
 		}
 
 		if (!searchParamsObj.schema && searchParams.toString()) {
-			error = 'The schema is required';
+			toast.error('The schema is required');
 			isLoading = false;
 			return;
 		}
@@ -134,9 +224,6 @@
 		// Set the tags filter and exact checked states
 		tagsFilterChecked = searchParamsObj.tags_filter === 'and';
 		tagsExactChecked = searchParamsObj.tags_exact === 'true';
-
-		// Clear the error message
-		error = null;
 
 		// Set the page and page size
 		page = searchParams.has('page') ? parseInt(searchParams.get('page') as string) : 1;
@@ -150,6 +237,14 @@
 		// Update the URL with the current search parameters
 		const newUrl = `${window.location.pathname}?${searchParams.toString()}`;
 		pushState(newUrl, '');
+
+		// Add index_url to the search params
+		if (sourceIndexUrl === '') {
+			toast.error('Source index URL is not available');
+			isLoading = false;
+			return;
+		}
+		searchParams.append('index_url', sourceIndexUrl);
 
 		const {
 			data: response,
@@ -166,7 +261,7 @@
 				total_pages: 0
 			};
 		} else {
-			error = errorMessage ?? 'Error fetching data';
+			toast.error('Error fetching data: ' + errorMessage);
 		}
 		isLoading = false;
 	}
@@ -250,14 +345,6 @@
 			</p>
 		</div>
 	</div>
-	{#if data.errorMessage || error}
-		<div class="mb-4">
-			<Alert.Root variant="destructive">
-				<CircleAlert class="h-4 w-4" />
-				<Alert.Title>Error: {data.errorMessage || error}</Alert.Title>
-			</Alert.Root>
-		</div>
-	{/if}
 	<div class="card p-4 variant-ghost-primary mb-2 border-2 border-gray-200 rounded-lg">
 		<form onsubmit={handleSearch} class="space-y-4">
 			<!-- Schema Selection -->

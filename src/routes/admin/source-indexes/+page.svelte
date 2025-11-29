@@ -12,7 +12,7 @@
 		TableRow
 	} from '$lib/components/ui/table';
 	import type { SourceIndex } from '$lib/types/source-index';
-	import { Database, Edit, Plus, Trash2 } from '@lucide/svelte';
+	import { Database, Plus, SquarePen, Trash2 } from '@lucide/svelte';
 
 	import { toast } from 'svelte-sonner';
 
@@ -74,6 +74,7 @@
 						<TableHead>Label</TableHead>
 						<TableHead>URL</TableHead>
 						<TableHead>Library URL</TableHead>
+						<TableHead>Data Proxy URL</TableHead>
 						<TableHead class="text-center">Actions</TableHead>
 					</TableRow>
 				</TableHeader>
@@ -89,6 +90,9 @@
 							<TableCell>
 								{sourceIndex.libraryUrl || '-'}
 							</TableCell>
+							<TableCell>
+								{sourceIndex.dataProxyUrl || '-'}
+							</TableCell>
 							<TableCell class="text-center">
 								<div class="flex justify-center gap-2">
 									<Button
@@ -96,7 +100,7 @@
 										size="sm"
 										href={`/admin/source-indexes/${sourceIndex.id}/edit`}
 									>
-										<Edit class="size-4" />
+										<SquarePen class="size-4" />
 										Edit
 									</Button>
 									<AlertDialog.Root>

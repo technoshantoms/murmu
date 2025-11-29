@@ -1,24 +1,14 @@
-import { getLibrarySchemas } from '$lib/api/schemas';
 import { getToken } from '$lib/core';
-import type { BasicSchema } from '$lib/types/schema';
 
 import type { PageLoad } from './$types';
 
-export const load: PageLoad = async ({ fetch }) => {
+export const load: PageLoad = async () => {
 	try {
 		const currentToken = await getToken('currentToken');
-		const { data: schemas, error } = await getLibrarySchemas(fetch);
-		const schemasList = schemas
-			.filter((s: BasicSchema) => {
-				return !s.name.startsWith('default-v');
-			})
-			.filter((s: BasicSchema) => {
-				return !s.name.startsWith('test_schema-v');
-			});
 
-		return { title: 'Batch Importer', user: currentToken, schemasList, errorMessage: error };
+		return { title: 'Batch Importer', user: currentToken };
 	} catch (err) {
-		console.error('Error fetching schemas:', err);
-		return { title: 'Batch Importer', schemasList: [], errorMessage: 'Error fetching schemas' };
+		console.error('Error loading batch importer:', err);
+		return { title: 'Batch Importer' };
 	}
 };

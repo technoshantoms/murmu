@@ -3,7 +3,15 @@
 	import * as Alert from '$lib/components/ui/alert/index.js';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
+	import { sourceIndexStore } from '$lib/stores/source-index';
 	import { CircleAlert, CircleCheck } from '@lucide/svelte';
+
+	import { onMount } from 'svelte';
+	import { toast } from 'svelte-sonner';
+
+	import type { PageData } from './$types';
+
+	let { data }: { data: PageData } = $props();
 
 	let postProfileUrl = $state('');
 	let checkProfileUrl = $state('');
@@ -17,14 +25,71 @@
 	let isSubmittingPost = $state(false);
 	let isSubmittingCheck = $state(false);
 	let isSubmittingDelete = $state(false);
+	let sourceIndexUrl = $state('');
+
+	onMount(() => {
+		if (!$sourceIndexStore) {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
+		}
+		loadSourceIndexUrl();
+	});
+
+	// When the source index changes, update the URL
+	$effect(() => {
+		const id = $sourceIndexStore;
+		if (!id) return;
+
+		queueMicrotask(() => {
+			loadSourceIndexUrl();
+
+			// Clear all page states and responses
+			postProfileUrl = '';
+			checkProfileUrl = '';
+			deleteProfileUrl = '';
+			postResponse = '';
+			statusResponse = '';
+			deleteResponse = '';
+			postResponseOk = true;
+			statusResponseOk = true;
+			deleteResponseOk = true;
+			isSubmittingPost = false;
+			isSubmittingCheck = false;
+			isSubmittingDelete = false;
+		});
+	});
+
+	function loadSourceIndexUrl() {
+		const sourceIndexId = $sourceIndexStore;
+
+		if (!sourceIndexId) {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
+		}
+
+		const src = data.sourceIndexes.find((s) => s.id === sourceIndexId);
+
+		if (!src) {
+			toast.error('Invalid Source Index.');
+			return;
+		}
+
+		sourceIndexUrl = src.url;
+	}
 
 	async function postProfile(): Promise<void> {
+		if (!sourceIndexUrl) {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
+		}
+
 		isSubmittingPost = true;
-		const { data, success, errors } = await postIndex(postProfileUrl);
+		const { data, success, errors, error } = await postIndex(postProfileUrl, sourceIndexUrl);
 		if (success) {
 			postResponseOk = true;
 			postResponse = JSON.stringify(data);
 		} else {
+			toast.error(error ?? 'Error posting profile');
 			postResponse = JSON.stringify(errors);
 			postResponseOk = false;
 		}
@@ -32,13 +97,19 @@
 	}
 
 	async function checkProfileStatus(): Promise<void> {
+		if (!sourceIndexUrl) {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
+		}
+
 		isSubmittingCheck = true;
 		const nodeId = await getHash(checkProfileUrl);
-		const { data, success, errors } = await getIndexStatus(nodeId);
+		const { data, success, errors, error } = await getIndexStatus(nodeId, sourceIndexUrl);
 		if (success) {
 			statusResponse = JSON.stringify(data);
 			statusResponseOk = true;
 		} else {
+			toast.error(error ?? 'Error checking profile status');
 			statusResponse = JSON.stringify(errors);
 			statusResponseOk = false;
 		}
@@ -46,13 +117,19 @@
 	}
 
 	async function deleteProfile(): Promise<void> {
+		if (!sourceIndexUrl) {
+			toast.error('Please select a Source Index in the top right first.');
+			return;
+		}
+
 		isSubmittingDelete = true;
 		const nodeId = await getHash(deleteProfileUrl);
-		const { data, success, errors } = await deleteIndex(nodeId);
+		const { data, success, errors, error } = await deleteIndex(nodeId, sourceIndexUrl);
 		if (success) {
 			deleteResponseOk = true;
 			deleteResponse = JSON.stringify(data);
 		} else {
+			toast.error(error ?? 'Error deleting profile');
 			deleteResponse = JSON.stringify(errors);
 			deleteResponseOk = false;
 		}

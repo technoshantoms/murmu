@@ -132,7 +132,7 @@
 	</Map>
 
 	{#if showSearch}
-		<div class="absolute top-2 left-2 right-2 z-[2000]">
+		<div class="absolute top-2 left-2 right-2 z-2000">
 			<Card class="shadow-lg">
 				<CardContent class="p-2">
 					<form
@@ -174,7 +174,7 @@
 													{getDropdownTriggerContent(dropdown, dropdown.field_name)}
 												</span>
 											</Select.Trigger>
-											<Select.Content class="z-[3000]">
+											<Select.Content class="z-3000">
 												<Select.Item value="">All {dropdown.title}</Select.Item>
 												{#each dropdown.options as opt (opt.value)}
 													<Select.Item value={opt.value}>{opt.label}</Select.Item>
@@ -185,7 +185,7 @@
 								{/each}
 							{/if}
 
-							<Button type="submit" size="sm" class="h-8 px-3 flex-shrink-0">
+							<Button type="submit" size="sm" class="h-8 px-3 shrink-0">
 								<Search class="h-3 w-3 mr-1" /> Search
 							</Button>
 							{#if hasActiveFilters()}
@@ -193,7 +193,7 @@
 									type="button"
 									variant="outline"
 									size="sm"
-									class="h-8 px-3 flex-shrink-0"
+									class="h-8 px-3 shrink-0"
 									onclick={clearFilters}
 								>
 									Clear Filters
@@ -207,7 +207,7 @@
 	{/if}
 
 	{#if !nodes?.length}
-		<div class="absolute inset-0 flex items-center justify-center z-[999] pointer-events-none">
+		<div class="absolute inset-0 flex items-center justify-center z-999 pointer-events-none">
 			<Card class="shadow-lg">
 				<CardContent class="p-6">
 					<div class="text-center space-y-2">

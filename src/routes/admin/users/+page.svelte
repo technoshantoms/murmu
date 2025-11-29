@@ -11,7 +11,7 @@
 		TableRow
 	} from '$lib/components/ui/table';
 	import { formatDate } from '$lib/utils/date';
-	import { Edit } from '@lucide/svelte';
+	import { SquarePen } from '@lucide/svelte';
 
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
@@ -72,7 +72,7 @@
 							<TableCell>{formatDate(user.createdAt)}</TableCell>
 							<TableCell>
 								<Button variant="outline" size="sm" href={`/admin/users/${user.id}/edit`}>
-									<Edit class="mr-2 h-4 w-4" />
+									<SquarePen class="mr-2 h-4 w-4" />
 									Edit Role
 								</Button>
 							</TableCell>

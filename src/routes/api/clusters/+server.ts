@@ -8,10 +8,15 @@ import type { D1Database } from '@cloudflare/workers-types';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from '@sveltejs/kit';
 
-export const GET: RequestHandler = async ({ platform = { env: { DB: {} as D1Database } } }) => {
+export const GET: RequestHandler = async ({
+	platform = { env: { DB: {} as D1Database } },
+	url
+}) => {
 	try {
 		const db = getDB(platform.env);
-		const clusterData = await getClusters(db);
+		const sourceIndexId = url.searchParams.get('source_index_id');
+
+		const clusterData = await getClusters(db, sourceIndexId ? parseInt(sourceIndexId) : undefined);
 
 		const clusters: ClusterPublic[] = clusterData as ClusterPublic[];
 
@@ -41,7 +46,8 @@ export const POST: RequestHandler = async ({
 		}
 
 		const body = await request.json();
-		const { name, description, indexUrl, queryUrl, centerLat, centerLon, scale } = body;
+		const { name, description, indexUrl, queryUrl, centerLat, centerLon, scale, sourceIndexId } =
+			body;
 
 		if (!name || !indexUrl || !queryUrl) {
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
@@ -55,7 +61,8 @@ export const POST: RequestHandler = async ({
 			queryUrl,
 			centerLat,
 			centerLon,
-			scale
+			scale,
+			sourceIndexId
 		};
 
 		await createCluster(db, cluster);

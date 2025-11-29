@@ -2,6 +2,7 @@ import { validateProfile } from '$lib/api/profiles';
 import { getDB } from '$lib/server/db';
 import { createProfile, getProfilesByUserId } from '$lib/server/models/profiles';
 import { getUserIdByPublicKey } from '$lib/server/models/public-key';
+import { getSourceIndexById } from '$lib/server/models/source-index';
 import type { ProfileInsert, ProfileObject } from '$lib/types/profile';
 import { authenticateUcanRequest } from '$lib/utils/ucan-utils.server';
 import type { D1Database } from '@cloudflare/workers-types';
@@ -10,7 +11,8 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async ({
 	platform = { env: { DB: {} as D1Database } },
-	request
+	request,
+	url
 }) => {
 	try {
 		const db = getDB(platform.env);
@@ -26,13 +28,23 @@ export const GET: RequestHandler = async ({
 			return json({ error, success: false }, { status });
 		}
 
+		const sourceIndexId = url.searchParams.get('source_index_id');
+		if (!sourceIndexId) {
+			return json({ error: 'Missing source_index_id', success: false }, { status: 400 });
+		}
+
+		const sourceIndexIdNumber = parseInt(sourceIndexId);
+		if (isNaN(sourceIndexIdNumber)) {
+			return json({ error: 'Invalid source_index_id', success: false }, { status: 400 });
+		}
+
 		const userByPublicKey = await getUserIdByPublicKey(db, publicKey);
 
 		if (!userByPublicKey) {
 			return json({ error: 'User not found', success: false }, { status: 404 });
 		}
 
-		const profiles = await getProfilesByUserId(db, userByPublicKey.userId);
+		const profiles = await getProfilesByUserId(db, userByPublicKey.userId, sourceIndexIdNumber);
 
 		return json({ data: profiles, success: true });
 	} catch (err) {
@@ -65,14 +77,23 @@ export const POST: RequestHandler = async ({
 			return json({ error: 'User not found', success: false }, { status: 404 });
 		}
 
-		const { linkedSchemas, title, profile, nodeId, lastUpdated } = await request.json();
+		const { linkedSchemas, title, profile, nodeId, lastUpdated, sourceIndexId } =
+			await request.json();
 
-		if (!linkedSchemas || !title || !profile || !lastUpdated) {
+		if (!linkedSchemas || !title || !profile || !lastUpdated || !sourceIndexId) {
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
 		}
 
+		const sourceIndex = await getSourceIndexById(db, sourceIndexId);
+		if (!sourceIndex) {
+			return json({ error: 'Source index not found', success: false }, { status: 404 });
+		}
+
 		// Validate profile
-		const validationResult = await validateProfile(JSON.parse(profile) as ProfileObject);
+		const validationResult = await validateProfile(
+			JSON.parse(profile) as ProfileObject,
+			sourceIndex.url
+		);
 		if (validationResult.errors) {
 			return json({ errors: validationResult.errors, success: false }, { status: 422 });
 		}
@@ -85,7 +106,8 @@ export const POST: RequestHandler = async ({
 			linkedSchemas,
 			title,
 			profile,
-			nodeId
+			nodeId,
+			sourceIndexId
 		};
 
 		await createProfile(db, profileInsert);

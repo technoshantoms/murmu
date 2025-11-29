@@ -198,7 +198,7 @@
 
 						<div class="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between pt-2">
 							<div class="flex gap-2">
-								<Button type="submit" class="flex-shrink-0">
+								<Button type="submit" class="shrink-0">
 									<Search class="h-4 w-4 mr-2" />
 									Search
 								</Button>

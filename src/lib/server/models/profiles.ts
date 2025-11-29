@@ -11,8 +11,16 @@ export async function getProfile(db: DrizzleD1Database, cuid: string) {
 	return await db.select().from(profiles).where(eq(profiles.cuid, cuid)).get();
 }
 
-export async function getProfilesByUserId(db: DrizzleD1Database, userId: number) {
-	return await db.select().from(profiles).where(eq(profiles.userId, userId)).all();
+export async function getProfilesByUserId(
+	db: DrizzleD1Database,
+	userId: number,
+	sourceIndexId: number
+) {
+	return await db
+		.select()
+		.from(profiles)
+		.where(and(eq(profiles.userId, userId), eq(profiles.sourceIndexId, sourceIndexId)))
+		.all();
 }
 
 export async function getProfileByCuid(db: DrizzleD1Database, cuid: string, userId: number) {

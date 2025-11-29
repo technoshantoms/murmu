@@ -39,6 +39,9 @@
 		schemasReset: () => void;
 		profileUpdated: () => void;
 		user: string | null;
+		sourceIndexUrl: string;
+		sourceLibraryUrl: string;
+		sourceIndexId: number | null;
 	}
 
 	let {
@@ -48,7 +51,10 @@
 		currentCuid = '',
 		schemasReset,
 		profileUpdated,
-		user
+		user,
+		sourceIndexUrl,
+		sourceLibraryUrl,
+		sourceIndexId
 	}: Props = $props();
 
 	let profilePreview: boolean = $state(false);
@@ -67,8 +73,13 @@
 
 	// Use parseRef to retrieve the schema based on schemasSelected
 	onMount(async () => {
+		if (!sourceLibraryUrl) {
+			toast.error('Please select a Source Index first.');
+			return;
+		}
+
 		try {
-			schemas = await parseRef(schemasSelected);
+			schemas = await parseRef(schemasSelected, sourceLibraryUrl);
 		} catch (err) {
 			toast.error(err as string);
 			resetSchemas();
@@ -130,7 +141,7 @@
 
 			currentProfile = generateSchemaInstance(schemas, formDataObject);
 
-			const { errors } = await validateProfile(currentProfile);
+			const { errors } = await validateProfile(currentProfile, sourceIndexUrl);
 
 			if (errors) {
 				validationErrors = errors?.map(
@@ -160,6 +171,12 @@
 			return;
 		}
 
+		if (!sourceIndexId) {
+			toast.error('Please select a Source Index first.');
+			isSubmitting = false;
+			return;
+		}
+
 		const form = event.target as HTMLFormElement;
 		const formData = new FormData(form);
 		const title = formData.get('title') as string;
@@ -174,7 +191,8 @@
 				const profileToUpdate: ProfileUpdateInput = {
 					profile: JSON.stringify(currentProfile),
 					title,
-					lastUpdated: Math.floor(new Date().getTime() / 1000)
+					lastUpdated: Math.floor(new Date().getTime() / 1000),
+					sourceIndexId
 				};
 				result = await updateProfile(currentCuid, profileToUpdate);
 			} else {
@@ -183,7 +201,8 @@
 					profile: JSON.stringify(currentProfile),
 					title,
 					lastUpdated: Math.floor(new Date().getTime() / 1000),
-					nodeId: ''
+					nodeId: '',
+					sourceIndexId
 				};
 				result = await createProfile(profileToSave);
 			}
@@ -214,7 +233,7 @@
 			}
 
 			// Post profile URL to index and get node_id
-			const { data, errors } = await postProfileToIndex(result.data.cuid);
+			const { data, errors } = await postProfileToIndex(result.data.cuid, sourceIndexUrl);
 			if (errors) {
 				const errorMessages = Array.isArray(errors)
 					? errors

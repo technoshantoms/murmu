@@ -1,8 +1,10 @@
-import { PUBLIC_LIBRARY_URL } from '$env/static/public';
 import type { RetrievedSchema, Schema } from '$lib/types/schema';
 
-export const parseRef = async (schemaName: string | string[]): Promise<Schema | null> => {
-	const url = `${PUBLIC_LIBRARY_URL}/v2/schemas`;
+export const parseRef = async (
+	schemaName: string | string[],
+	sourceLibraryUrl: string
+): Promise<Schema | null> => {
+	const url = `${sourceLibraryUrl}/v2/schemas`;
 
 	const schemaNames = Array.isArray(schemaName)
 		? schemaName

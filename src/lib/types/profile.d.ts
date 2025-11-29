@@ -41,6 +41,12 @@ export type ProfileCreateInput = Omit<
 	'id' | 'userId' | 'cuid' | 'createdAt' | 'updatedAt'
 >;
 
-export type ProfileUpdateInput = Pick<Profile, 'title' | 'profile' | 'lastUpdated'>;
+export type ProfileUpdateInput = Pick<
+	Profile,
+	'title' | 'profile' | 'lastUpdated' | 'sourceIndexId'
+>;
 
-export type ProfileDbUpdateInput = Pick<Profile, 'title' | 'profile' | 'lastUpdated' | 'updatedAt'>;
+export type ProfileDbUpdateInput = Pick<
+	Profile,
+	'title' | 'profile' | 'lastUpdated' | 'updatedAt' | 'sourceIndexId'
+>;

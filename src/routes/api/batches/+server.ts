@@ -1,4 +1,3 @@
-import { PUBLIC_DATA_PROXY_URL } from '$env/static/public';
 import { getDB } from '$lib/server/db';
 import { authenticateUcanRequest } from '$lib/utils/ucan-utils.server';
 import type { D1Database } from '@cloudflare/workers-types';
@@ -6,7 +5,8 @@ import { json, type RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async ({
 	platform = { env: { DB: {} as D1Database } },
-	request
+	request,
+	url
 }) => {
 	try {
 		const db = getDB(platform.env);
@@ -25,7 +25,12 @@ export const GET: RequestHandler = async ({
 		// todo: use last 25 characters of public key as cuid
 		const cuid = publicKey.slice(-25);
 
-		const response = await fetch(`${PUBLIC_DATA_PROXY_URL}/v1/batch/user?user_id=${cuid}`);
+		const sourceDataProxyUrl = url.searchParams.get('source_data_proxy_url');
+		if (!sourceDataProxyUrl) {
+			return json({ error: 'Missing source_data_proxy_url', success: false }, { status: 400 });
+		}
+
+		const response = await fetch(`${sourceDataProxyUrl}/v1/batch/user?user_id=${cuid}`);
 
 		if (!response.ok) {
 			return json(
@@ -66,6 +71,7 @@ export const POST: RequestHandler = async ({
 		const schemas = formData.get('schemas');
 		const title = formData.get('title');
 		const cuid = publicKey.slice(-25);
+		const sourceDataProxyUrl = formData.get('source_data_proxy_url') as string;
 
 		formData.append('user_id', cuid);
 		formData.append('schemas', '[' + schemas + ']');
@@ -74,14 +80,18 @@ export const POST: RequestHandler = async ({
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
 		}
 
+		if (!sourceDataProxyUrl) {
+			return json({ error: 'Missing source_data_proxy_url', success: false }, { status: 400 });
+		}
+
 		// Validate the batch import data
-		const validationResponse = await validateBatchImport(formData);
+		const validationResponse = await validateBatchImport(formData, sourceDataProxyUrl);
 
 		if (validationResponse.status !== 200) {
 			return validationResponse;
 		}
 
-		const response = await fetch(`${PUBLIC_DATA_PROXY_URL}/v1/batch/import`, {
+		const response = await fetch(`${sourceDataProxyUrl}/v1/batch/import`, {
 			method: 'POST',
 			body: formData
 		});
@@ -126,6 +136,7 @@ export const PUT: RequestHandler = async ({
 		const title = formData.get('title');
 		const batchId = formData.get('batch_id');
 		const cuid = publicKey.slice(-25);
+		const sourceDataProxyUrl = formData.get('source_data_proxy_url') as string;
 
 		formData.append('user_id', cuid);
 		formData.append('schemas', '[' + schemas + ']');
@@ -134,14 +145,18 @@ export const PUT: RequestHandler = async ({
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
 		}
 
+		if (!sourceDataProxyUrl) {
+			return json({ error: 'Missing source_data_proxy_url', success: false }, { status: 400 });
+		}
+
 		// Validate the batch import data
-		const validationResponse = await validateBatchImport(formData);
+		const validationResponse = await validateBatchImport(formData, sourceDataProxyUrl);
 
 		if (validationResponse.status !== 200) {
 			return validationResponse;
 		}
 
-		const response = await fetch(`${PUBLIC_DATA_PROXY_URL}/v1/batch/import`, {
+		const response = await fetch(`${sourceDataProxyUrl}/v1/batch/import`, {
 			method: 'PUT',
 			body: formData
 		});
@@ -183,6 +198,11 @@ export const DELETE: RequestHandler = async ({
 		const formData = await request.formData();
 		const batchId = formData.get('batch_id');
 		const cuid = publicKey.slice(-25);
+		const sourceDataProxyUrl = formData.get('source_data_proxy_url') as string;
+
+		if (!sourceDataProxyUrl) {
+			return json({ error: 'Missing source_data_proxy_url', success: false }, { status: 400 });
+		}
 
 		formData.append('user_id', cuid);
 
@@ -190,7 +210,7 @@ export const DELETE: RequestHandler = async ({
 			return json({ error: 'Missing batch_id or user_id', success: false }, { status: 400 });
 		}
 
-		const response = await fetch(`${PUBLIC_DATA_PROXY_URL}/v1/batch/import`, {
+		const response = await fetch(`${sourceDataProxyUrl}/v1/batch/import`, {
 			method: 'DELETE',
 			body: formData
 		});
@@ -210,14 +230,24 @@ export const DELETE: RequestHandler = async ({
 	}
 };
 
-const validateBatchImport = async (formData: FormData): Promise<Response> => {
+const validateBatchImport = async (
+	formData: FormData,
+	sourceDataProxyUrl: string
+): Promise<Response> => {
 	try {
-		const response = await fetch(`${PUBLIC_DATA_PROXY_URL}/v1/batch/validate`, {
+		const response = await fetch(`${sourceDataProxyUrl}/v1/batch/validate`, {
 			method: 'POST',
 			body: formData
 		});
 
 		if (!response.ok) {
+			if (response.status === 413) {
+				return json(
+					{ error: 'File size too large. The maximum file size is 8 MB.', success: false },
+					{ status: 413 }
+				);
+			}
+
 			const res = await response.json();
 			if (res.errors) {
 				return json({ errors: res.errors, success: false }, { status: response.status });

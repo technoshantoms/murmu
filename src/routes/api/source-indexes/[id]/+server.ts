@@ -60,9 +60,9 @@ export const PUT: RequestHandler = async ({
 			return json({ error, success: false }, { status });
 		}
 
-		const { url, label, libraryUrl } = await request.json();
+		const { url, label, libraryUrl, dataProxyUrl } = await request.json();
 
-		if (!url || !label || !libraryUrl) {
+		if (!url || !label || !libraryUrl || !dataProxyUrl) {
 			return json({ error: 'Missing required fields', success: false }, { status: 400 });
 		}
 
@@ -76,6 +76,7 @@ export const PUT: RequestHandler = async ({
 			url,
 			label,
 			libraryUrl,
+			dataProxyUrl,
 			updatedAt: Math.floor(new Date().getTime() / 1000)
 		};
 

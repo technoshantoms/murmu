@@ -5,42 +5,65 @@ import { getSourceIndexes } from '$lib/api/source-indexes';
 import type { PageLoad } from './$types';
 
 export const load: PageLoad = async ({ fetch }) => {
-	const { data: sourceIndexes } = await getSourceIndexes(fetch);
+	try {
+		const { data: sourceIndexes } = await getSourceIndexes(fetch);
 
-	// Use the first source index as the default
-	const defaultSourceIndex = sourceIndexes[0];
+		// Use the first source index as the default
+		const defaultSourceIndex = sourceIndexes[0];
 
-	const { data: rawCountries } = await getCountries(
-		`${defaultSourceIndex?.libraryUrl}/countries`,
-		fetch
-	);
+		if (!defaultSourceIndex) {
+			return {
+				title: 'Create a Cluster',
+				countries: [],
+				schemas: [],
+				sourceIndexes: []
+			};
+		}
 
-	const countries = Object.entries(rawCountries).map(([key, names]) => ({
-		value: key,
-		// Use the second element as the label if available, otherwise use the first element
-		label: Array.isArray(names)
-			? (names[1] || names[0])
-					.split(' ')
-					.map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
-					.join(' ')
-			: ''
-	}));
+		const { data: rawCountries } = await getCountries(
+			`${defaultSourceIndex?.libraryUrl}/v2/countries`,
+			fetch
+		);
 
-	// Get the schema for the source index
-	const { data: allSchemas } = await getSchemas(`${defaultSourceIndex?.libraryUrl}/schemas`, fetch);
+		const countries = Object.entries(rawCountries).map(([key, names]) => ({
+			value: key,
+			// Use the second element as the label if available, otherwise use the first element
+			label: Array.isArray(names)
+				? (names[1] || names[0])
+						.split(' ')
+						.map((word: string) => word.charAt(0).toUpperCase() + word.slice(1))
+						.join(' ')
+				: ''
+		}));
 
-	const schemas = allSchemas
-		.filter((schema: { name: string }) => !schema.name.startsWith('test_'))
-		.map(({ name }) => ({
-			value: name,
-			label: name
-		}))
-		.sort((a, b) => a.label.localeCompare(b.label));
+		// Get the schema for the source index
+		const { data: allSchemas } = await getSchemas(
+			`${defaultSourceIndex?.libraryUrl}/v2/schemas`,
+			fetch
+		);
 
-	return {
-		title: 'Create a Cluster',
-		countries,
-		schemas,
-		sourceIndexes
-	};
+		const schemas = allSchemas
+			.filter(({ name }) => !name.startsWith('default-v'))
+			.filter(({ name }) => !name.startsWith('test_schema-v'))
+			.map(({ name }) => ({
+				value: name,
+				label: name
+			}))
+			.sort((a, b) => a.label.localeCompare(b.label));
+
+		return {
+			title: 'Create a Cluster',
+			countries,
+			schemas,
+			sourceIndexes
+		};
+	} catch (error) {
+		console.error('Error loading cluster creation data:', error);
+		return {
+			title: 'Create a Cluster',
+			countries: [],
+			schemas: [],
+			sourceIndexes: []
+		};
+	}
 };

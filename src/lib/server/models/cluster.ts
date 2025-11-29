@@ -4,8 +4,12 @@ import type { D1Result } from '@cloudflare/workers-types';
 import { eq } from 'drizzle-orm';
 import type { DrizzleD1Database } from 'drizzle-orm/d1';
 
-export async function getClusters(db: DrizzleD1Database) {
-	return await db.select().from(clusters).all();
+export async function getClusters(db: DrizzleD1Database, sourceIndexId?: number) {
+	const query = db.select().from(clusters);
+	if (sourceIndexId) {
+		query.where(eq(clusters.sourceIndexId, sourceIndexId));
+	}
+	return await query.all();
 }
 
 export async function getCluster(db: DrizzleD1Database, clusterUuid: string) {

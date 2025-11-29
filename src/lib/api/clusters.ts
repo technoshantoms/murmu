@@ -8,8 +8,17 @@ import type {
 } from '$lib/types/cluster';
 import type { DropdownField } from '$lib/types/enum-dropdown';
 
-export const getClusters = async (customFetch?: typeof fetch) =>
-	request<undefined, Cluster[]>('/api/clusters', 'GET', undefined, customFetch);
+export const getClusters = async (sourceIndexId?: number, customFetch?: typeof fetch) => {
+	if (sourceIndexId) {
+		return request<undefined, Cluster[]>(
+			`/api/clusters?source_index_id=${sourceIndexId}`,
+			'GET',
+			undefined,
+			customFetch
+		);
+	}
+	return request<undefined, Cluster[]>('/api/clusters', 'GET', undefined, customFetch);
+};
 
 export const getCluster = (clusterUuid: string, customFetch?: typeof fetch) =>
 	request<undefined, ClusterPublic>(`/api/clusters/${clusterUuid}`, 'GET', undefined, customFetch);

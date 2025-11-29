@@ -35,8 +35,9 @@
 	let clusterCenterLatitude = $state(0);
 	let clusterCenterLongitude = $state(0);
 	let clusterScale = $state(5);
-	let sourceIndex = $state(sourceIndexOptions[0].url);
-	let schema = $state(schemaOptions[0]?.value || '');
+	let sourceIndex = $state(sourceIndexOptions[0]?.url ?? '');
+	let sourceIndexId = $state(sourceIndexOptions[0]?.id ?? 0);
+	let schema = $state(schemaOptions[0]?.value ?? '');
 	let name = $state('');
 	let lat = $state<number | null>(null);
 	let lon = $state<number | null>(null);
@@ -68,6 +69,7 @@
 
 	async function handleSourceIndexChange(newSourceIndex: string) {
 		sourceIndex = newSourceIndex;
+		sourceIndexId = sourceIndexOptions.find((option) => option.url === newSourceIndex)?.id ?? 0;
 
 		const selectedOption = sourceIndexOptions.find((option) => option.url === newSourceIndex);
 		const libraryURL = selectedOption?.libraryUrl ?? '';
@@ -81,14 +83,15 @@
 	async function loadSchemasForIndex(libraryURL: string) {
 		loadingSchemas = true;
 		try {
-			const { data: schemas } = await getSchemas(`${libraryURL}/schemas`);
+			const { data: schemas } = await getSchemas(`${libraryURL}/v2/schemas`);
 			schemaOptions.length = 0;
 			schemaOptions.push(
 				...schemas
-					.filter((schema: { name: string }) => !schema.name.startsWith('test_'))
-					.map((schema: { name: string }) => ({
-						value: schema.name,
-						label: schema.name
+					.filter(({ name }) => !name.startsWith('default-v'))
+					.filter(({ name }) => !name.startsWith('test_schema-v'))
+					.map(({ name }) => ({
+						value: name,
+						label: name
 					}))
 					.sort((a, b) => a.label.localeCompare(b.label))
 			);
@@ -104,7 +107,7 @@
 	async function loadCountriesForIndex(libraryURL: string) {
 		loadingCountries = true;
 		try {
-			const { data: rawCountries } = await getCountries(`${libraryURL}/countries`);
+			const { data: rawCountries } = await getCountries(`${libraryURL}/v2/countries`);
 			countryOptions.length = 0;
 			countryOptions.push(
 				...Object.entries(rawCountries).map(([key, names]) => ({
@@ -155,11 +158,12 @@
 			const clusterData: ClusterCreateInput = {
 				name: clusterName,
 				description: clusterDescription,
-				indexUrl: sourceIndex,
+				indexUrl: sourceIndex + '/v2/nodes',
 				queryUrl: `?${queryString}`,
 				centerLat: clusterCenterLatitude,
 				centerLon: clusterCenterLongitude,
-				scale: clusterScale
+				scale: clusterScale,
+				sourceIndexId
 			};
 
 			const { rawNodes, meta } = await fetchProfiles(clusterData.indexUrl, clusterData.queryUrl);

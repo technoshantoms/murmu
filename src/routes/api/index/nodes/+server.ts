@@ -1,9 +1,14 @@
-import { PUBLIC_INDEX_URL } from '$env/static/public';
 import { json, type RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async ({ url }) => {
 	const params = Object.fromEntries(url.searchParams.entries());
 	let searchParams = '';
+
+	const indexUrl = params?.index_url;
+
+	if (!indexUrl) {
+		return json({ error: 'Missing index_url', success: false }, { status: 400 });
+	}
 
 	if (params?.schema && params.schema !== 'all') {
 		searchParams += 'schema=' + params.schema;
@@ -28,7 +33,7 @@ export const GET: RequestHandler = async ({ url }) => {
 	if (params?.page) searchParams += '&page=' + params.page;
 
 	try {
-		const response = await fetch(`${PUBLIC_INDEX_URL}/v2/nodes?${searchParams}`);
+		const response = await fetch(`${indexUrl}/v2/nodes?${searchParams}`);
 		const data = await response.json();
 
 		if (response.status === 400) {
@@ -55,14 +60,18 @@ export const GET: RequestHandler = async ({ url }) => {
 };
 
 export const POST: RequestHandler = async ({ request }) => {
-	const { profile_url: profileUrl } = await request.json();
+	const { profile_url: profileUrl, source_index_url: sourceIndexUrl } = await request.json();
 
 	if (!profileUrl) {
 		return json({ error: 'Missing profile URL' }, { status: 400 });
 	}
 
+	if (!sourceIndexUrl) {
+		return json({ error: 'Missing source index URL' }, { status: 400 });
+	}
+
 	try {
-		const response = await fetch(`${PUBLIC_INDEX_URL}/v2/nodes-sync`, {
+		const response = await fetch(`${sourceIndexUrl}/v2/nodes-sync`, {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json'

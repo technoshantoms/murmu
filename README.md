@@ -12,17 +12,7 @@ First, copy the example environment file:
 cp .env.example .env
 ```
 
-Next, configure the Murmuration Services URLs. You can use the provided
-test services or run your own using
-[MurmurationServices](https://github.com/MurmurationsNetwork/MurmurationsServices):
-
-```bash
-PUBLIC_INDEX_URL=https://test-index.murmurations.network
-PUBLIC_LIBRARY_URL=https://test-library.murmurations.network
-PUBLIC_DATA_PROXY_URL=https://test-data-proxy.murmurations.network
-```
-
-Set the Aggregator's Tools URL:
+Second, Set the Aggregator's Tools URL:
 
 ```bash
 PUBLIC_TOOLS_URL=http://localhost:5173
